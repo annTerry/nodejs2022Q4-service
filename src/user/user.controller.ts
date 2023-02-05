@@ -8,7 +8,10 @@ import {
   Body,
   HttpException,
   HttpCode,
+  Res,
+  HttpStatus,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { CreateUserDto, UpdatePasswordDto } from '../dto/user.dto';
 import { UserService } from './user.service';
 
@@ -29,9 +32,12 @@ export class UserController {
     return JSON.stringify(dbResponse.data);
   }
   @Post()
-  async create(@Body() createUserDto: CreateUserDto) {
-    const result = this.userService.create(createUserDto);
-    if (result === 400) throw new HttpException('Data missing', result);
+  async create(@Body() createUserDto: CreateUserDto, @Res() res: Response) {
+    const dbResponse = await this.userService.create(createUserDto);
+    if (dbResponse.code === 400)
+      throw new HttpException('Data missing', dbResponse.code);
+    console.log(dbResponse);
+    res.status(HttpStatus.CREATED).send(dbResponse.data);
   }
   @Put(':id')
   async edit(

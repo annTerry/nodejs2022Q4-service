@@ -6,7 +6,7 @@ import {
   numberAndExist,
 } from '../common/utility';
 import { DataBase } from 'src/db/db.service';
-import { Track, Response } from '../common/types';
+import { Track, DBResponse } from '../common/types';
 
 @Injectable()
 export class TrackService {
@@ -33,8 +33,8 @@ export class TrackService {
     return this.db.allTracks();
   }
 
-  getTrack(id: string): Response {
-    const response = new Response();
+  getTrack(id: string): DBResponse {
+    const response = new DBResponse();
     const valid = validate(id);
     if (!valid) {
       response.code = 400;
@@ -51,14 +51,14 @@ export class TrackService {
     return response;
   }
 
-  removeTrack(id: string): Response {
+  removeTrack(id: string): DBResponse {
     const response = this.getTrack(id);
     if (!response.data) return response;
     this.db.removeTrack(id);
     return response;
   }
 
-  changeTrack(id: string, track: Track): Response {
+  changeTrack(id: string, track: Track): DBResponse {
     const response = this.getTrack(id);
     if (!response.data) {
       response.code = 404;

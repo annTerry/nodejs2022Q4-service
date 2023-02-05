@@ -6,7 +6,7 @@ import {
   numberAndExist,
 } from '../common/utility';
 import { DataBase } from 'src/db/db.service';
-import { Album, Response } from '../common/types';
+import { Album, DBResponse } from '../common/types';
 
 @Injectable()
 export class AlbumService {
@@ -31,8 +31,8 @@ export class AlbumService {
     return this.db.allAlbums();
   }
 
-  getAlbum(id: string): Response {
-    const response = new Response();
+  getAlbum(id: string): DBResponse {
+    const response = new DBResponse();
     const valid = validate(id);
     if (!valid) {
       response.code = 400;
@@ -49,14 +49,14 @@ export class AlbumService {
     return response;
   }
 
-  removeAlbum(id: string): Response {
+  removeAlbum(id: string): DBResponse {
     const response = this.getAlbum(id);
     if (!response.data) return response;
     this.db.removeAlbum(id);
     return response;
   }
 
-  changeAlbum(id: string, album: Album): Response {
+  changeAlbum(id: string, album: Album): DBResponse {
     const response = this.getAlbum(id);
     if (!response.data) {
       response.code = 404;

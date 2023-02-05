@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { v4 as newUUID, validate } from 'uuid';
 import { stringAndExist, booleanAndExist } from '../common/utility';
 import { DataBase } from 'src/db/db.service';
-import { Artist, Response } from '../common/types';
+import { Artist, DBResponse } from '../common/types';
 
 @Injectable()
 export class ArtistService {
@@ -24,8 +24,8 @@ export class ArtistService {
     return this.db.allArtists();
   }
 
-  getArtist(id: string): Response {
-    const response = new Response();
+  getArtist(id: string): DBResponse {
+    const response = new DBResponse();
     const valid = validate(id);
     if (!valid) {
       response.code = 400;
@@ -42,14 +42,14 @@ export class ArtistService {
     return response;
   }
 
-  removeArtist(id: string): Response {
+  removeArtist(id: string): DBResponse {
     const response = this.getArtist(id);
     if (!response.data) return response;
     this.db.removeArtist(id);
     return response;
   }
 
-  changeArtist(id: string, artist: Artist): Response {
+  changeArtist(id: string, artist: Artist): DBResponse {
     const response = this.getArtist(id);
     if (!response.data) {
       response.code = 404;

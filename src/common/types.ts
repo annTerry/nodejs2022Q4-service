@@ -15,7 +15,7 @@ export class ClearUser {
   updatedAt: number;
 }
 
-export class Response {
+export class DBResponse {
   code: number;
   message: string;
   data: ClearUser | Track | Artist | Album;

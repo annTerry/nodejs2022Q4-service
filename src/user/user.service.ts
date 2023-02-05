@@ -3,16 +3,20 @@ import { CreateUserDto, UpdatePasswordDto } from '../dto/user.dto';
 import { v4 as newUUID, validate } from 'uuid';
 import { stringAndExist } from '../common/utility';
 import { DataBase } from 'src/db/db.service';
-import { User, ClearUser, Response } from '../common/types';
+import { User, ClearUser, DBResponse } from '../common/types';
 
 @Injectable()
 export class UserService {
   db = new DataBase();
 
-  create(user: CreateUserDto): number {
+  async create(user: CreateUserDto): Promise<DBResponse> {
+    const response = new DBResponse();
     const validate =
       stringAndExist(user.login) && stringAndExist(user.password);
-    if (!validate) return 400;
+    if (!validate) {
+      response.code = 400;
+      return response;
+    }
     const newUser = new User();
     newUser.password = user.password;
     newUser.login = user.login;
@@ -21,15 +25,17 @@ export class UserService {
     newUser.createdAt = Date.now();
     newUser.updatedAt = Date.now();
     this.db.setUser(newUser);
-    return 200;
+    response.code = 200;
+    response.data = this.db.getClearUser(newUser.id);
+    return response;
   }
 
   getAllUsers(): ClearUser[] {
     return this.db.allUsers();
   }
 
-  getUser(id: string): Response {
-    const response = new Response();
+  getUser(id: string): DBResponse {
+    const response = new DBResponse();
     const valid = validate(id);
     if (!valid) {
       response.code = 400;
@@ -55,14 +61,14 @@ export class UserService {
     return response;
   }
 
-  removeUser(id: string): Response {
+  removeUser(id: string): DBResponse {
     const response = this.getUser(id);
     if (!response.data) return response;
     this.db.removeUser(id);
     return response;
   }
 
-  changePassword(id: string, updatePasswordDto: UpdatePasswordDto): Response {
+  changePassword(id: string, updatePasswordDto: UpdatePasswordDto): DBResponse {
     const response = this.getUser(id);
     if (!response.data) return response;
     const validData =

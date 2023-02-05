@@ -19,6 +19,16 @@ export class DataBase {
   getUser(id: string): User | null {
     return this.users[id];
   }
+  getClearUser(id: string): ClearUser {
+    const clearUser = new ClearUser();
+    const currentUser = this.users[id];
+    Object.keys(currentUser).forEach((key) => {
+      if (key !== 'password') {
+        clearUser[key] = currentUser[key];
+      }
+    });
+    return clearUser;
+  }
   setUser(user: User) {
     this.users[user.id] = user;
   }
