@@ -7,3 +7,6 @@ export const stringOrNotExist = (value: string | null): boolean => {
 export const numberAndExist = (value: number): boolean => {
   return value !== null && value !== undefined && typeof value === 'number';
 };
+export const booleanAndExist = (value: boolean): boolean => {
+  return value !== null && value !== undefined && typeof value === 'boolean';
+};

@@ -46,11 +46,23 @@ export class DataBase {
   setAlbum(album: Album) {
     this.albums[album.id] = album;
   }
+  allAlbums(): Album[] {
+    return Object.values(this.albums);
+  }
+  removeAlbum(id: string) {
+    delete this.albums[id];
+  }
   getArtist(id: string): Artist | null {
     return this.artist[id];
   }
   setArtist(artist: Artist) {
     this.artist[artist.id] = artist;
+  }
+  allArtists(): Artist[] {
+    return Object.values(this.artist);
+  }
+  removeArtist(id: string) {
+    delete this.artist[id];
   }
   getTrack(id: string): Track | null {
     return this.track[id];
