@@ -9,43 +9,40 @@ import {
   HttpException,
   HttpCode,
 } from '@nestjs/common';
-import { CreateUserDto, UpdatePasswordDto } from '../dto/user.dto';
-import { UserService } from './user.service';
+import { TrackService } from './track.service';
+import { Track } from 'src/common/types';
 
-@Controller('user')
-export class UserController {
-  userService = new UserService();
+@Controller('track')
+export class TrackController {
+  trackService = new TrackService();
 
   @Get()
-  getAllUsers(): string {
-    return JSON.stringify(this.userService.getAllUsers());
+  getAllTracks(): string {
+    return JSON.stringify(this.trackService.getAllTracks());
   }
   @Get(':id')
   getUserById(@Param('id') id: string): string {
-    const dbResponse = this.userService.getUser(id);
+    const dbResponse = this.trackService.getTrack(id);
     if (!dbResponse.data) {
       throw new HttpException(dbResponse.message, dbResponse.code);
     }
     return JSON.stringify(dbResponse.data);
   }
   @Post()
-  async create(@Body() createUserDto: CreateUserDto) {
-    const result = this.userService.create(createUserDto);
+  async create(@Body() track: Track) {
+    const result = this.trackService.create(track);
     if (result === 400) throw new HttpException('Data missing', result);
   }
   @Put(':id')
-  async edit(
-    @Param('id') id: string,
-    @Body() updatePasswordDto: UpdatePasswordDto,
-  ) {
-    const result = this.userService.changePassword(id, updatePasswordDto);
+  async edit(@Param('id') id: string, @Body() track: Track) {
+    const result = this.trackService.changeTrack(id, track);
     if (result.code !== 200)
       throw new HttpException(result.message, result.code);
   }
   @Delete(':id')
   @HttpCode(204)
   delUserById(@Param('id') id: string) {
-    const result = this.userService.removeUser(id);
+    const result = this.trackService.removeTrack(id);
     if (result.code !== 200)
       throw new HttpException(result.message, result.code);
   }
