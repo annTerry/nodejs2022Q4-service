@@ -71,7 +71,6 @@ export class FavService {
       response.message = `Id ${id} is not valid`;
       return response;
     }
-    console.log(this.db.favHasTrack(id));
     if (!this.db.favHasTrack(id)) {
       response.code = 404;
       response.message = `Track is not in Favorites`;

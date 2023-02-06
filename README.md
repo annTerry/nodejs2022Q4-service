@@ -8,7 +8,7 @@
 ## Downloading
 
 ```
-git clone {repository URL}
+git clone https://github.com/annTerry/nodejs2022Q4-service.git
 ```
 
 ## Set correct branch
