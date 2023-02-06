@@ -11,6 +11,7 @@ import { DataBase } from './db/db.service';
 import { TrackService } from './track/track.service';
 import { ArtistService } from './artist/artist.service';
 import { AlbumService } from './album/album.service';
+import { FavService } from './favs/favor.service';
 
 @Module({
   imports: [],
@@ -29,6 +30,7 @@ import { AlbumService } from './album/album.service';
     TrackService,
     ArtistService,
     AlbumService,
+    FavService,
   ],
 })
 export class AppModule {}

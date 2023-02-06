@@ -51,8 +51,6 @@ export class ArtistService {
 
   removeArtist(id: string): DBResponse {
     const response = this.getArtist(id);
-    console.log(id);
-    console.log(response);
     if (!response.data) return response;
     this.db.removeArtist(id);
     return response;
@@ -74,7 +72,6 @@ export class ArtistService {
     artist.id = response.data.id;
     this.db.setArtist(artist);
     response.data = this.db.getArtist(artist.id);
-    console.log(response);
     return response;
   }
 }

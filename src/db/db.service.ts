@@ -65,6 +65,7 @@ export class DataBase {
         this.track[key].albumId = null;
       }
     });
+    if (this.favHasAlbum(id)) this.removeFromFav('albums', id);
     delete this.albums[id];
   }
   getArtist(id: string): Artist | null {
@@ -82,14 +83,10 @@ export class DataBase {
         this.track[key].artistId = null;
       }
     });
+    if (this.favHasArtist(id)) this.removeFromFav('artists', id);
     delete this.artist[id];
   }
   getTrack(id: string): Track | null {
-    console.log('--from track');
-    console.log(this.track);
-    console.log(this.artist);
-    console.log(this.users);
-    console.log('--end from track');
     return this.track[id];
   }
   setTrack(track: Track) {
@@ -99,21 +96,45 @@ export class DataBase {
     return Object.values(this.track);
   }
   removeTrack(id: string) {
+    if (this.favHasTrack(id)) this.removeFromFav('tracks', id);
     delete this.track[id];
   }
   addTrackToFav(id: string) {
-    if (this.favs.tracks.indexOf(id) >= 0) {
+    if (!this.favs.tracks) this.favs.tracks = [];
+    if (this.favs.tracks.indexOf(id) < 0) {
       this.favs.tracks.push(id);
     }
   }
   addArtistToFav(id: string) {
-    if (this.favs.artists.indexOf(id) >= 0) {
+    if (!this.favs.artists) this.favs.artists = [];
+    if (this.favs.artists.indexOf(id) < 0) {
       this.favs.artists.push(id);
     }
   }
   addAlbumToFav(id: string) {
-    if (this.favs.albums.indexOf(id) >= 0) {
+    if (!this.favs.albums) this.favs.albums = [];
+    if (this.favs.albums.indexOf(id) < 0) {
       this.favs.albums.push(id);
     }
+  }
+  getFromFav(key: string): string[] {
+    let result = this.favs[key];
+    if (!result) result = [];
+    return result;
+  }
+  removeFromFav(key: string, id: string): string[] {
+    let result = this.favs[key];
+    if (!result) result = [];
+    this.favs[key] = result.filter((data: string) => data !== id);
+    return result;
+  }
+  favHasTrack(id: string): boolean {
+    return this.favs.tracks && this.favs.tracks.indexOf(id) > -1;
+  }
+  favHasAlbum(id: string): boolean {
+    return this.favs.albums && this.favs.albums.indexOf(id) > -1;
+  }
+  favHasArtist(id: string): boolean {
+    return this.favs.artists && this.favs.artists.indexOf(id) > -1;
   }
 }
