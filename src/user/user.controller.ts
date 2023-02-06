@@ -17,11 +17,12 @@ import { UserService } from './user.service';
 
 @Controller('user')
 export class UserController {
-  userService = new UserService();
+  constructor(private userService: UserService) {}
 
   @Get()
-  getAllUsers(): string {
-    return JSON.stringify(this.userService.getAllUsers());
+  getAllUsers(@Res() res: Response): string {
+    res.status(HttpStatus.OK).send(this.userService.getAllUsers());
+    return '';
   }
   @Get(':id')
   getUserById(@Param('id') id: string): string {
@@ -36,17 +37,18 @@ export class UserController {
     const dbResponse = await this.userService.create(createUserDto);
     if (dbResponse.code === 400)
       throw new HttpException('Data missing', dbResponse.code);
-    console.log(dbResponse);
     res.status(HttpStatus.CREATED).send(dbResponse.data);
   }
   @Put(':id')
   async edit(
     @Param('id') id: string,
     @Body() updatePasswordDto: UpdatePasswordDto,
+    @Res() res: Response,
   ) {
-    const result = this.userService.changePassword(id, updatePasswordDto);
+    const result = await this.userService.changePassword(id, updatePasswordDto);
     if (result.code !== 200)
       throw new HttpException(result.message, result.code);
+    res.status(HttpStatus.OK).send(result.data);
   }
   @Delete(':id')
   @HttpCode(204)

@@ -8,17 +8,21 @@ import {
   Body,
   HttpException,
   HttpCode,
+  Res,
+  HttpStatus,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { ArtistService } from './artist.service';
 import { Artist } from 'src/common/types';
 
 @Controller('artist')
 export class ArtistController {
-  artistService = new ArtistService();
+  constructor(private artistService: ArtistService) {}
 
   @Get()
-  getAllArtists(): string {
-    return JSON.stringify(this.artistService.getAllArtists());
+  getAllArtists(@Res() res: Response): string {
+    res.status(HttpStatus.OK).send(this.artistService.getAllArtists());
+    return '';
   }
   @Get(':id')
   getUserById(@Param('id') id: string): string {
@@ -29,15 +33,22 @@ export class ArtistController {
     return JSON.stringify(dbResponse.data);
   }
   @Post()
-  async create(@Body() artist: Artist) {
+  async create(@Body() artist: Artist, @Res() res: Response) {
     const result = this.artistService.create(artist);
-    if (result === 400) throw new HttpException('Data missing', result);
+    if (result.code === 400)
+      throw new HttpException('Data missing', result.code);
+    res.status(HttpStatus.CREATED).send(result.data);
   }
   @Put(':id')
-  async edit(@Param('id') id: string, @Body() artist: Artist) {
-    const result = this.artistService.changeArtist(id, artist);
+  async edit(
+    @Param('id') id: string,
+    @Body() artist: Artist,
+    @Res() res: Response,
+  ) {
+    const result = await this.artistService.changeArtist(id, artist);
     if (result.code !== 200)
       throw new HttpException(result.message, result.code);
+    res.status(HttpStatus.OK).send(result.data);
   }
   @Delete(':id')
   @HttpCode(204)

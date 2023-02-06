@@ -6,18 +6,24 @@ import { Artist, DBResponse } from '../common/types';
 
 @Injectable()
 export class ArtistService {
-  db = new DataBase();
+  constructor(private db: DataBase) {}
 
-  create(artist: Artist): number {
+  create(artist: Artist): DBResponse {
+    const response = new DBResponse();
     const validate =
       stringAndExist(artist.name) && booleanAndExist(artist.grammy);
-    if (!validate) return 400;
+    if (!validate) {
+      response.code = 400;
+      return response;
+    }
     const newArtist = new Artist();
     newArtist.name = artist.name;
     newArtist.grammy = artist.grammy;
     newArtist.id = newUUID();
     this.db.setArtist(newArtist);
-    return 200;
+    response.code = 200;
+    response.data = newArtist;
+    return response;
   }
 
   getAllArtists(): Artist[] {
@@ -32,30 +38,28 @@ export class ArtistService {
       response.message = `Id ${id} is not valid`;
       return response;
     }
-    const Artist = this.db.getArtist(id);
-    if (!Artist) {
+    const artist = this.db.getArtist(id);
+    if (!artist) {
       response.code = 404;
       response.message = `Artist with id ${id} not found`;
       return response;
     }
+    response.data = artist;
     response.code = 200;
     return response;
   }
 
   removeArtist(id: string): DBResponse {
     const response = this.getArtist(id);
+    console.log(id);
+    console.log(response);
     if (!response.data) return response;
     this.db.removeArtist(id);
     return response;
   }
 
-  changeArtist(id: string, artist: Artist): DBResponse {
-    const response = this.getArtist(id);
-    if (!response.data) {
-      response.code = 404;
-      response.message = `Artist with id ${id} not found`;
-      return response;
-    }
+  async changeArtist(id: string, artist: Artist): Promise<DBResponse> {
+    let response = new DBResponse();
     const validate =
       stringAndExist(artist.name) && booleanAndExist(artist.grammy);
     if (!validate) {
@@ -63,8 +67,14 @@ export class ArtistService {
       response.message = `Wrong data`;
       return response;
     }
+    response = this.getArtist(id);
+    if (!response.data) {
+      return response;
+    }
     artist.id = response.data.id;
     this.db.setArtist(artist);
+    response.data = this.db.getArtist(artist.id);
+    console.log(response);
     return response;
   }
 }

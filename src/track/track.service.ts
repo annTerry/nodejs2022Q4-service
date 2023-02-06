@@ -10,15 +10,19 @@ import { Track, DBResponse } from '../common/types';
 
 @Injectable()
 export class TrackService {
-  db = new DataBase();
+  constructor(private db: DataBase) {}
 
-  create(track: Track): number {
+  create(track: Track): DBResponse {
+    const response = new DBResponse();
     const validate =
       stringAndExist(track.name) &&
       stringOrNotExist(track.artistId) &&
       stringOrNotExist(track.albumId) &&
       numberAndExist(track.duration);
-    if (!validate) return 400;
+    if (!validate) {
+      response.code = 400;
+      return response;
+    }
     const newTrack = new Track();
     newTrack.name = track.name;
     newTrack.albumId = track.albumId;
@@ -26,7 +30,9 @@ export class TrackService {
     newTrack.duration = track.duration;
     newTrack.id = newUUID();
     this.db.setTrack(newTrack);
-    return 200;
+    response.code = 200;
+    response.data = newTrack;
+    return response;
   }
 
   getAllTracks(): Track[] {
@@ -47,6 +53,7 @@ export class TrackService {
       response.message = `Track with id ${id} not found`;
       return response;
     }
+    response.data = track;
     response.code = 200;
     return response;
   }
@@ -59,12 +66,7 @@ export class TrackService {
   }
 
   changeTrack(id: string, track: Track): DBResponse {
-    const response = this.getTrack(id);
-    if (!response.data) {
-      response.code = 404;
-      response.message = `Track with id ${id} not found`;
-      return response;
-    }
+    let response = new DBResponse();
     const validate =
       stringAndExist(track.name) &&
       stringOrNotExist(track.artistId) &&
@@ -75,8 +77,11 @@ export class TrackService {
       response.message = `Wrong data`;
       return response;
     }
+    response = this.getTrack(id);
+    if (!response.data) return response;
     track.id = response.data.id;
     this.db.setTrack(track);
+    response.data = this.db.getTrack(id);
     return response;
   }
 }

@@ -37,7 +37,7 @@ export class DataBase {
       const value: ClearUser = {
         id: '',
         login: '',
-        version: 0,
+        version: 1,
         createdAt: 0,
         updatedAt: 0,
       };
@@ -60,6 +60,11 @@ export class DataBase {
     return Object.values(this.albums);
   }
   removeAlbum(id: string) {
+    Object.entries(this.track).forEach(([key, value]) => {
+      if (value.albumId === id) {
+        this.track[key].albumId = null;
+      }
+    });
     delete this.albums[id];
   }
   getArtist(id: string): Artist | null {
@@ -72,9 +77,19 @@ export class DataBase {
     return Object.values(this.artist);
   }
   removeArtist(id: string) {
+    Object.entries(this.track).forEach(([key, value]) => {
+      if (value.artistId === id) {
+        this.track[key].artistId = null;
+      }
+    });
     delete this.artist[id];
   }
   getTrack(id: string): Track | null {
+    console.log('--from track');
+    console.log(this.track);
+    console.log(this.artist);
+    console.log(this.users);
+    console.log('--end from track');
     return this.track[id];
   }
   setTrack(track: Track) {

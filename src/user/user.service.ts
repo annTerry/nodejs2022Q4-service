@@ -7,7 +7,7 @@ import { User, ClearUser, DBResponse } from '../common/types';
 
 @Injectable()
 export class UserService {
-  db = new DataBase();
+  constructor(private db: DataBase) {}
 
   async create(user: CreateUserDto): Promise<DBResponse> {
     const response = new DBResponse();
@@ -68,9 +68,11 @@ export class UserService {
     return response;
   }
 
-  changePassword(id: string, updatePasswordDto: UpdatePasswordDto): DBResponse {
-    const response = this.getUser(id);
-    if (!response.data) return response;
+  async changePassword(
+    id: string,
+    updatePasswordDto: UpdatePasswordDto,
+  ): Promise<DBResponse> {
+    let response = new DBResponse();
     const validData =
       stringAndExist(updatePasswordDto.newPassword) &&
       stringAndExist(updatePasswordDto.oldPassword);
@@ -79,6 +81,8 @@ export class UserService {
       response.message = 'Wrong data';
       return response;
     }
+    response = this.getUser(id);
+    if (!response.data) return response;
     const user = this.db.getUser(id);
     if (user.password !== updatePasswordDto.oldPassword) {
       response.code = 403;
@@ -89,6 +93,7 @@ export class UserService {
     user.version = user.version + 1;
     user.updatedAt = Date.now();
     this.db.setUser(user);
+    response.data = this.db.getClearUser(id);
     return response;
   }
 }

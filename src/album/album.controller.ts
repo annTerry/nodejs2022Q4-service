@@ -8,17 +8,21 @@ import {
   Body,
   HttpException,
   HttpCode,
+  Res,
+  HttpStatus,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { AlbumService } from './album.service';
 import { Album } from 'src/common/types';
 
 @Controller('album')
 export class AlbumController {
-  albumService = new AlbumService();
+  constructor(private albumService: AlbumService) {}
 
   @Get()
-  getAllAlbums(): string {
-    return JSON.stringify(this.albumService.getAllAlbums());
+  getAllAlbums(@Res() res: Response): string {
+    res.status(HttpStatus.OK).send(this.albumService.getAllAlbums());
+    return '';
   }
   @Get(':id')
   getUserById(@Param('id') id: string): string {
@@ -29,15 +33,22 @@ export class AlbumController {
     return JSON.stringify(dbResponse.data);
   }
   @Post()
-  async create(@Body() album: Album) {
+  async create(@Body() album: Album, @Res() res: Response) {
     const result = this.albumService.create(album);
-    if (result === 400) throw new HttpException('Data missing', result);
+    if (result.code === 400)
+      throw new HttpException('Data missing', result.code);
+    res.status(HttpStatus.CREATED).send(result.data);
   }
   @Put(':id')
-  async edit(@Param('id') id: string, @Body() album: Album) {
+  async edit(
+    @Param('id') id: string,
+    @Body() album: Album,
+    @Res() res: Response,
+  ) {
     const result = this.albumService.changeAlbum(id, album);
     if (result.code !== 200)
       throw new HttpException(result.message, result.code);
+    res.status(HttpStatus.OK).send(result.data);
   }
   @Delete(':id')
   @HttpCode(204)
