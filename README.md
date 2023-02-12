@@ -4,69 +4,46 @@
 
 - Git - [Download & Install Git](https://git-scm.com/downloads).
 - Node.js - [Download & Install Node.js](https://nodejs.org/en/download/) and the npm package manager.
+- Docker - [Download & Install Docker](https://www.docker.com//)
 
 ## Downloading
 
 ```
-git clone {repository URL}
+git clone https://github.com/annTerry/nodejs2022Q4-service.git
 ```
 
-## Installing NPM modules
+## Set correct branch
 
 ```
-npm install
+cd nodejs2022Q4-service
+git checkout docker
 ```
 
-## Running application
+## Docker
 
+### Install and run
 ```
-npm start
-```
-
-After starting the app on port (4000 as default) you can open
-in your browser OpenAPI documentation by typing http://localhost:4000/doc/.
-For more information about OpenAPI/Swagger please visit https://swagger.io/.
-
-## Testing
-
-After application running open new terminal and enter:
-
-To run all tests without authorization
-
-```
-npm run test
+docker-compose build
+dockerdocker-compose up
 ```
 
-To run only one of all test suites
+ Please wait for application full start
+ Then you can test application on localhost:{PORT} (default PORT is 4004)
+
+### Docker hub
+You can pull images from docker-hub
 
 ```
-npm run test -- <path to suite>
+docker pull alattery/nodejs2022:db
+docker pull alattery/nodejs2022:app
 ```
 
-To run all test with authorization
+### Size
+Application image size is 410Mb
 
+### Script for vulnerabilities scanning
 ```
-npm run test:auth
+npm run docker:scan
 ```
-
-To run only specific test suite with authorization
-
-```
-npm run test:auth -- <path to suite>
-```
-
-### Auto-fix and format
-
-```
-npm run lint
-```
-
-```
-npm run format
-```
-
-### Debugging in VSCode
-
-Press <kbd>F5</kbd> to debug.
-
-For more information, visit: https://code.visualstudio.com/docs/editor/debugging
+### Notes
+Docker was made and tested on Win11 with WSL2 option and it renew and restart after change in src.
