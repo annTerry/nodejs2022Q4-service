@@ -4,6 +4,7 @@
 
 - Git - [Download & Install Git](https://git-scm.com/downloads).
 - Node.js - [Download & Install Node.js](https://nodejs.org/en/download/) and the npm package manager.
+- Docker - [Download & Install Docker](https://www.docker.com//)
 
 ## Downloading
 
@@ -15,46 +16,34 @@ git clone https://github.com/annTerry/nodejs2022Q4-service.git
 
 ```
 cd nodejs2022Q4-service
-git checkout dev
+git checkout docker
 ```
 
-## Installing NPM modules
+## Docker
 
+### Install and run
 ```
-npm install
-```
-
-## Running application
-
-```
-npm start
+docker-compose build
+dockerdocker-compose up
 ```
 
-Documentation can be found in /doc/api.yami
-Go to https://editor.swagger.io/ and copy or load this file in editor for view documentation
+ Please wait for application full start
+ Then you can test application on localhost:{PORT} (default PORT is 4004)
 
-## Testing
-
-After application running open new terminal and enter:
-
-To run all tests without authorization
+### Docker hub
+You can pull images from docker-hub
 
 ```
-npm run test
+docker pull alattery/nodejs2022:db
+docker pull alattery/nodejs2022:app
 ```
 
-To run only one of all test suites
+### Size
+Application image size is 410Mb
 
+### Script for vulnerabilities scanning
 ```
-npm run test -- <path to suite>
+npm run docker:scan
 ```
-
-### Auto-fix and format
-
-```
-npm run lint
-```
-
-```
-npm run format
-```
+### Notes
+Docker was made and tested on Win11 with WSL2 option and it renew and restart after change in src.
