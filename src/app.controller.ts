@@ -5,18 +5,14 @@ import { AppDataSource } from './db/db.config';
 
 @Controller()
 export class AppController {
+  baseConnected = false;
   constructor(private readonly appService: AppService) {}
 
   @Get()
   getHello(@Res() res: Response) {
-    AppDataSource.initialize()
-      .then(() => {
-        res.status(HttpStatus.OK).send('DB connected');
-      })
-      .catch((error) => {
-        res.status(404).send('DB error');
-        console.log(JSON.stringify(AppDataSource.options));
-        console.log(error);
-      });
+    this.appService.getHello();
+    if (AppDataSource.isInitialized)
+      res.status(HttpStatus.OK).send('DB connected');
+    else res.status(HttpStatus.NOT_IMPLEMENTED).send('DB was not connect');
   }
 }

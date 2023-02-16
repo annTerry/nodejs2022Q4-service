@@ -6,7 +6,9 @@ import {
   Favorites,
   ClearUser,
 } from '../common/types';
+import { User as DBUser } from './db.entities';
 import { Injectable } from '@nestjs/common';
+import { AppDataSource } from './db.config';
 
 @Injectable()
 export class DataBase {
@@ -15,41 +17,69 @@ export class DataBase {
   private readonly artist: { [id: string]: Artist } = {};
   private readonly track: { [id: string]: Track } = {};
   private readonly favs: Favorites = new Favorites();
+  private dbRepository = AppDataSource.getRepository(DBUser);
 
-  getUser(id: string): User | null {
-    return this.users[id];
+  private copyObjectByKeys<T, N>(
+    inputData: N,
+    outputData: T,
+    noPassInInput = false,
+  ): T {
+    if (inputData) {
+      Object.keys(inputData).forEach((key) => {
+        if (key !== 'password' || !noPassInInput) {
+          outputData[key] = inputData[key];
+        }
+        if (key === 'createdAt' || key === 'updatedAt') {
+          outputData[key] = +inputData[key];
+        }
+      });
+    }
+    return outputData;
   }
-  getClearUser(id: string): ClearUser {
-    const clearUser = new ClearUser();
-    const currentUser = this.users[id];
-    Object.keys(currentUser).forEach((key) => {
-      if (key !== 'password') {
-        clearUser[key] = currentUser[key];
-      }
+
+  async getUser(id: string): Promise<User> {
+    let user = new User();
+    const currentUser = await this.dbRepository.findOneBy({
+      id: id,
     });
+    user = this.copyObjectByKeys(currentUser, user);
+    return user;
+  }
+
+  async getClearUser(id: string): Promise<ClearUser> {
+    let clearUser = new ClearUser();
+    const currentUser = await this.dbRepository.findOneBy({
+      id: id,
+    });
+    clearUser = this.copyObjectByKeys(currentUser, clearUser, true);
     return clearUser;
   }
-  setUser(user: User) {
-    this.users[user.id] = user;
+
+  async setUser(user: User) {
+    console.log(JSON.stringify(user));
+    let userModel = new DBUser();
+    userModel = this.copyObjectByKeys(user, userModel);
+    console.log(JSON.stringify(userModel));
+    await AppDataSource.manager.save(userModel);
+    console.log(user.id);
   }
-  allUsers(): ClearUser[] {
-    return Object.values(this.users).map((data) => {
-      const value: ClearUser = {
-        id: '',
-        login: '',
-        version: 1,
-        createdAt: 0,
-        updatedAt: 0,
-      };
-      Object.keys(data).forEach((key) => {
-        if (key !== 'password') value[key] = data[key];
-      });
+
+  async allUsers(): Promise<ClearUser[]> {
+    const allUsers = await this.dbRepository.find();
+    return Object.values(allUsers).map((data) => {
+      let value: ClearUser = new ClearUser();
+      value = this.copyObjectByKeys(data, value, true);
       return value;
     });
   }
-  removeUser(id: string) {
-    delete this.users[id];
+
+  async removeUser(id: string) {
+    const userToRemove = await this.dbRepository.findOneBy({
+      id: id,
+    });
+    if (userToRemove) await this.dbRepository.remove(userToRemove);
   }
+
   getAlbum(id: string): Album | null {
     return this.albums[id];
   }

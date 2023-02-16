@@ -14,28 +14,10 @@ export class User {
   @Column()
   version: number;
 
-  @Column()
+  @Column({ type: 'bigint' })
   createdAt: number;
 
-  @Column()
-  updatedAt: number;
-}
-
-@Entity()
-export class ClearUser {
-  @PrimaryColumn()
-  id: string;
-
-  @Column()
-  login: string;
-
-  @Column()
-  version: number;
-
-  @Column()
-  createdAt: number;
-
-  @Column()
+  @Column({ type: 'bigint' })
   updatedAt: number;
 }
 

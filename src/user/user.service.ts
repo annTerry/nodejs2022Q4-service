@@ -24,17 +24,17 @@ export class UserService {
     newUser.version = 1;
     newUser.createdAt = Date.now();
     newUser.updatedAt = Date.now();
-    this.db.setUser(newUser);
+    await this.db.setUser(newUser);
     response.code = 200;
-    response.data = this.db.getClearUser(newUser.id);
+    response.data = await this.db.getClearUser(newUser.id);
     return response;
   }
 
-  getAllUsers(): ClearUser[] {
+  async getAllUsers(): Promise<ClearUser[]> {
     return this.db.allUsers();
   }
 
-  getUser(id: string): DBResponse {
+  async getUser(id: string): Promise<DBResponse> {
     const response = new DBResponse();
     const valid = validate(id);
     if (!valid) {
@@ -42,8 +42,8 @@ export class UserService {
       response.message = `Id ${id} is not valid`;
       return response;
     }
-    const user = this.db.getUser(id);
-    if (!user) {
+    const user = await this.db.getUser(id);
+    if (!user || !user.id) {
       response.code = 404;
       response.message = `User with id ${id} not found`;
       return response;
@@ -61,9 +61,11 @@ export class UserService {
     return response;
   }
 
-  removeUser(id: string): DBResponse {
-    const response = this.getUser(id);
-    if (!response.data) return response;
+  async removeUser(id: string): Promise<DBResponse> {
+    const response = await this.getUser(id);
+
+    console.log(JSON.stringify(response));
+    if (response.code !== 200) return response;
     this.db.removeUser(id);
     return response;
   }
@@ -81,10 +83,10 @@ export class UserService {
       response.message = 'Wrong data';
       return response;
     }
-    response = this.getUser(id);
+    response = await this.getUser(id);
     if (!response.data) return response;
-    const user = this.db.getUser(id);
-    if (user.password !== updatePasswordDto.oldPassword) {
+    const user = await this.db.getUser(id);
+    if (user.id && user.password !== updatePasswordDto.oldPassword) {
       response.code = 403;
       response.message = 'Old password is wrong';
       return response;
@@ -92,8 +94,8 @@ export class UserService {
     user.password = updatePasswordDto.newPassword;
     user.version = user.version + 1;
     user.updatedAt = Date.now();
-    this.db.setUser(user);
-    response.data = this.db.getClearUser(id);
+    await this.db.setUser(user);
+    response.data = await this.db.getClearUser(id);
     return response;
   }
 }
