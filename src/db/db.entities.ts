@@ -32,13 +32,13 @@ export class Artist {
   @Column()
   grammy: boolean;
 
-  @OneToMany(() => Track, (track) => track.id, {
-    onDelete: 'CASCADE',
+  @OneToMany(() => Track, (track) => track.artistId, {
+    onDelete: 'SET NULL',
   })
   track: Track[] | null;
 
-  @OneToMany(() => Album, (album) => album.id, {
-    onDelete: 'CASCADE',
+  @OneToMany(() => Album, (album) => album.artistId, {
+    onDelete: 'SET NULL',
   })
   album: Album[] | null;
 }
@@ -54,16 +54,16 @@ export class Album {
   @Column()
   year: number;
 
-  @ManyToOne(() => Artist, (artist) => artist.id, {
+  @ManyToOne(() => Artist, (artist) => artist.album, {
     nullable: true,
-    onDelete: 'CASCADE',
+    onDelete: 'SET NULL',
   })
   artistId: Artist | null;
 
-  @OneToMany(() => Track, (track) => track.id, {
-    onDelete: 'CASCADE',
+  @OneToMany(() => Track, (track) => track.albumId, {
+    onDelete: 'SET NULL',
   })
-  track: Track[];
+  track: Track[] | null;
 }
 
 @Entity()
@@ -74,17 +74,17 @@ export class Track {
   @Column()
   name: string;
 
-  @ManyToOne(() => Artist, (artist) => artist.id, {
+  @ManyToOne(() => Artist, (artist) => artist.track, {
     nullable: true,
-    onDelete: 'CASCADE',
+    onDelete: 'SET NULL',
   })
   artistId: Artist | null;
 
-  @ManyToOne(() => Album, (album) => album.id, {
+  @ManyToOne(() => Album, (album) => album.track, {
     nullable: true,
-    onDelete: 'CASCADE',
+    onDelete: 'SET NULL',
   })
-  albumId: Artist | null;
+  albumId: Album | null;
 
   @Column()
   duration: number;

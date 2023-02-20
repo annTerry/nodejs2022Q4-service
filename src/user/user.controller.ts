@@ -53,8 +53,6 @@ export class UserController {
   @Delete(':id')
   @HttpCode(204)
   async delUserById(@Param('id') id: string) {
-    console.log('del ', id);
-
     const result = await this.userService.removeUser(id);
     if (result.code !== 200)
       throw new HttpException(result.message, result.code);

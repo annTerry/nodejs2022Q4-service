@@ -43,7 +43,10 @@ export class FavService {
       response.code = 422;
       return response;
     }
-    this.db.addTrackToFav(id);
+    if (response.code === 400) {
+      return response;
+    }
+    await this.db.addTrackToFav(id);
     return response;
   }
 
@@ -53,7 +56,10 @@ export class FavService {
       response.code = 422;
       return response;
     }
-    this.db.addAlbumToFav(id);
+    if (response.code === 400) {
+      return response;
+    }
+    await this.db.addAlbumToFav(id);
     return response;
   }
 
@@ -63,7 +69,10 @@ export class FavService {
       response.code = 422;
       return response;
     }
-    this.db.addArtistToFav(id);
+    if (response.code === 400) {
+      return response;
+    }
+    await this.db.addArtistToFav(id);
     return response;
   }
 
