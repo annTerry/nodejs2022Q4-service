@@ -12,7 +12,7 @@ import { Track, DBResponse } from '../common/types';
 export class TrackService {
   constructor(private db: DataBase) {}
 
-  create(track: Track): DBResponse {
+  async create(track: Track): Promise<DBResponse> {
     const response = new DBResponse();
     const validate =
       stringAndExist(track.name) &&
@@ -29,17 +29,17 @@ export class TrackService {
     newTrack.artistId = track.artistId;
     newTrack.duration = track.duration;
     newTrack.id = newUUID();
-    this.db.setTrack(newTrack);
+    await this.db.setTrack(newTrack);
     response.code = 200;
     response.data = newTrack;
     return response;
   }
 
-  getAllTracks(): Track[] {
-    return this.db.allTracks();
+  async getAllTracks(): Promise<Track[]> {
+    return await this.db.allTracks();
   }
 
-  getTrack(id: string): DBResponse {
+  async getTrack(id: string): Promise<DBResponse> {
     const response = new DBResponse();
     const valid = validate(id);
     if (!valid) {
@@ -47,8 +47,8 @@ export class TrackService {
       response.message = `Id ${id} is not valid`;
       return response;
     }
-    const track = this.db.getTrack(id);
-    if (!track) {
+    const track = await this.db.getTrack(id);
+    if (!track || !track.id) {
       response.code = 404;
       response.message = `Track with id ${id} not found`;
       return response;
@@ -58,14 +58,14 @@ export class TrackService {
     return response;
   }
 
-  removeTrack(id: string): DBResponse {
-    const response = this.getTrack(id);
+  async removeTrack(id: string): Promise<DBResponse> {
+    const response = await this.getTrack(id);
     if (!response.data) return response;
-    this.db.removeTrack(id);
+    await this.db.removeTrack(id);
     return response;
   }
 
-  changeTrack(id: string, track: Track): DBResponse {
+  async changeTrack(id: string, track: Track): Promise<DBResponse> {
     let response = new DBResponse();
     const validate =
       stringAndExist(track.name) &&
@@ -77,11 +77,11 @@ export class TrackService {
       response.message = `Wrong data`;
       return response;
     }
-    response = this.getTrack(id);
+    response = await this.getTrack(id);
     if (!response.data) return response;
     track.id = response.data.id;
-    this.db.setTrack(track);
-    response.data = this.db.getTrack(id);
+    await this.db.setTrack(track);
+    response.data = await this.db.getTrack(id);
     return response;
   }
 }

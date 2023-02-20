@@ -4,6 +4,7 @@
 
 - Git - [Download & Install Git](https://git-scm.com/downloads).
 - Node.js - [Download & Install Node.js](https://nodejs.org/en/download/) and the npm package manager.
+- Docker - [Download & Install Docker](https://www.docker.com//)
 
 ## Downloading
 
@@ -15,46 +16,45 @@ git clone https://github.com/annTerry/nodejs2022Q4-service.git
 
 ```
 cd nodejs2022Q4-service
-git checkout dev
+git checkout postgre
 ```
 
-## Installing NPM modules
+## Docker
 
+### Install and run
 ```
-npm install
-```
-
-## Running application
-
-```
-npm start
+docker-compose build
+docker-compose up
 ```
 
-Documentation can be found in /doc/api.yami
-Go to https://editor.swagger.io/ and copy or load this file in editor for view documentation
+ Please wait for application full start
+ Then you can test application on localhost:{PORT} (default PORT is 4000)
 
-## Testing
+### Docker hub
+You can pull images from docker-hub (they were private, but set public for check)
 
-After application running open new terminal and enter:
+```
+docker pull alattery/nodejs2022:db
+docker pull alattery/nodejs2022:app
+```
 
-To run all tests without authorization
+### Size
+Application image size is ~450Mb
 
+### Script for vulnerabilities scanning
+```
+npm run docker:scan
+```
+### Notes
+Docker was made and tested on Win11 with WSL2 option and it renew and restart after change in src.
+
+# TEST POSTGRES DB
+In running container with app (it names nodejs2022q4-service app) run tests with this command
 ```
 npm run test
 ```
+### Migrations
+Migration file in src/migrations/CreateTable.ts, it runs in src/db/db.config.ts
 
-To run only one of all test suites
-
-```
-npm run test -- <path to suite>
-```
-
-### Auto-fix and format
-
-```
-npm run lint
-```
-
-```
-npm run format
-```
+### Addition
+In .env you can set PORT and by CLEAN_DB can clean db tables before start tests

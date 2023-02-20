@@ -20,14 +20,14 @@ export class UserController {
   constructor(private userService: UserService) {}
 
   @Get()
-  getAllUsers(@Res() res: Response): string {
-    res.status(HttpStatus.OK).send(this.userService.getAllUsers());
+  async getAllUsers(@Res() res: Response): Promise<string> {
+    res.status(HttpStatus.OK).send(await this.userService.getAllUsers());
     return '';
   }
   @Get(':id')
-  getUserById(@Param('id') id: string): string {
-    const dbResponse = this.userService.getUser(id);
-    if (!dbResponse.data) {
+  async getUserById(@Param('id') id: string): Promise<string> {
+    const dbResponse = await this.userService.getUser(id);
+    if (!dbResponse.data || !dbResponse.data.id) {
       throw new HttpException(dbResponse.message, dbResponse.code);
     }
     return JSON.stringify(dbResponse.data);
@@ -52,8 +52,8 @@ export class UserController {
   }
   @Delete(':id')
   @HttpCode(204)
-  delUserById(@Param('id') id: string) {
-    const result = this.userService.removeUser(id);
+  async delUserById(@Param('id') id: string) {
+    const result = await this.userService.removeUser(id);
     if (result.code !== 200)
       throw new HttpException(result.message, result.code);
   }

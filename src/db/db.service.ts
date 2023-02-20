@@ -1,140 +1,270 @@
+import { User, Album, Artist, Track, ClearUser } from '../common/types';
 import {
-  User,
-  Album,
-  Artist,
-  Track,
-  Favorites,
-  ClearUser,
-} from '../common/types';
+  User as DBUser,
+  Artist as DBArtist,
+  Album as DBAlbum,
+  Track as DBTrack,
+  Favorites as DBFavorite,
+} from './db.entities';
 import { Injectable } from '@nestjs/common';
+import { AppDataSource } from './db.config';
+import { FAVORITE_TYPES } from '../common/const';
 
 @Injectable()
 export class DataBase {
-  private readonly users: { [id: string]: User } = {};
-  private readonly albums: { [id: string]: Album } = {};
-  private readonly artist: { [id: string]: Artist } = {};
-  private readonly track: { [id: string]: Track } = {};
-  private readonly favs: Favorites = new Favorites();
+  private dbUserRepository = AppDataSource.getRepository(DBUser);
+  private dbArtistRepository = AppDataSource.getRepository(DBArtist);
+  private dbTrackRepository = AppDataSource.getRepository(DBTrack);
+  private dbAlbumRepository = AppDataSource.getRepository(DBAlbum);
+  private dbFavoriteRepository = AppDataSource.getRepository(DBFavorite);
 
-  getUser(id: string): User | null {
-    return this.users[id];
+  private copyObjectByKeys<T, N>(
+    inputData: N,
+    outputData: T,
+    noPassInInput = false,
+    requiredFields = [],
+  ): T {
+    if (inputData) {
+      Object.keys(inputData).forEach((key) => {
+        if (key !== 'password' || !noPassInInput) {
+          outputData[key] = inputData[key];
+        }
+        if (key === 'createdAt' || key === 'updatedAt') {
+          outputData[key] = +inputData[key];
+        }
+        if (inputData[key] === undefined) {
+          outputData[key] = null;
+        }
+      });
+      requiredFields.forEach((key) => {
+        if (!outputData[key] && outputData[key] === undefined)
+          outputData[key] = null;
+        else if (outputData[key]) outputData[key] = outputData[key].id;
+      });
+    }
+    return outputData;
   }
-  getClearUser(id: string): ClearUser {
-    const clearUser = new ClearUser();
-    const currentUser = this.users[id];
-    Object.keys(currentUser).forEach((key) => {
-      if (key !== 'password') {
-        clearUser[key] = currentUser[key];
-      }
+
+  async getUser(id: string): Promise<User> {
+    let user = new User();
+    const currentUser = await this.dbUserRepository.findOneBy({
+      id: id,
     });
+    user = this.copyObjectByKeys(currentUser, user);
+    return user;
+  }
+
+  async getClearUser(id: string): Promise<ClearUser> {
+    let clearUser = new ClearUser();
+    const currentUser = await this.dbUserRepository.findOneBy({
+      id: id,
+    });
+    clearUser = this.copyObjectByKeys(currentUser, clearUser, true);
     return clearUser;
   }
-  setUser(user: User) {
-    this.users[user.id] = user;
+
+  async setUser(user: User) {
+    let userModel = new DBUser();
+    userModel = this.copyObjectByKeys(user, userModel);
+    await AppDataSource.manager.save(userModel);
   }
-  allUsers(): ClearUser[] {
-    return Object.values(this.users).map((data) => {
-      const value: ClearUser = {
-        id: '',
-        login: '',
-        version: 1,
-        createdAt: 0,
-        updatedAt: 0,
-      };
-      Object.keys(data).forEach((key) => {
-        if (key !== 'password') value[key] = data[key];
-      });
+
+  async allUsers(): Promise<ClearUser[]> {
+    const allUsers = await this.dbUserRepository.find();
+    return Object.values(allUsers).map((data) => {
+      let value: ClearUser = new ClearUser();
+      value = this.copyObjectByKeys(data, value, true);
       return value;
     });
   }
-  removeUser(id: string) {
-    delete this.users[id];
-  }
-  getAlbum(id: string): Album | null {
-    return this.albums[id];
-  }
-  setAlbum(album: Album) {
-    this.albums[album.id] = album;
-  }
-  allAlbums(): Album[] {
-    return Object.values(this.albums);
-  }
-  removeAlbum(id: string) {
-    Object.entries(this.track).forEach(([key, value]) => {
-      if (value.albumId === id) {
-        this.track[key].albumId = null;
-      }
+
+  async removeUser(id: string) {
+    const userToRemove = await this.dbUserRepository.findOneBy({
+      id: id,
     });
-    if (this.favHasAlbum(id)) this.removeFromFav('albums', id);
-    delete this.albums[id];
+    if (userToRemove) await this.dbUserRepository.remove(userToRemove);
   }
-  getArtist(id: string): Artist | null {
-    return this.artist[id];
-  }
-  setArtist(artist: Artist) {
-    this.artist[artist.id] = artist;
-  }
-  allArtists(): Artist[] {
-    return Object.values(this.artist);
-  }
-  removeArtist(id: string) {
-    Object.entries(this.track).forEach(([key, value]) => {
-      if (value.artistId === id) {
-        this.track[key].artistId = null;
-      }
+
+  async getAlbum(id: string): Promise<Album> {
+    let album = new Album();
+    const currentAlbum = await this.dbAlbumRepository.find({
+      where: { id: id },
+      relations: { artistId: true },
     });
-    if (this.favHasArtist(id)) this.removeFromFav('artists', id);
-    delete this.artist[id];
+    if (currentAlbum.length > 0)
+      album = this.copyObjectByKeys(currentAlbum[0], album, false, [
+        'artistId',
+      ]);
+    return album;
   }
-  getTrack(id: string): Track | null {
-    return this.track[id];
-  }
-  setTrack(track: Track) {
-    this.track[track.id] = track;
-  }
-  allTracks(): Track[] {
-    return Object.values(this.track);
-  }
-  removeTrack(id: string) {
-    if (this.favHasTrack(id)) this.removeFromFav('tracks', id);
-    delete this.track[id];
-  }
-  addTrackToFav(id: string) {
-    if (!this.favs.tracks) this.favs.tracks = [];
-    if (this.favs.tracks.indexOf(id) < 0) {
-      this.favs.tracks.push(id);
+
+  async setAlbum(album: Album) {
+    let albumModel = new DBAlbum();
+    albumModel = this.copyObjectByKeys(album, albumModel);
+    if (album.artistId != null) {
+      albumModel.artistId = await this.dbArtistRepository.findOneBy({
+        id: album.artistId,
+      });
     }
+    await AppDataSource.manager.save(albumModel);
   }
-  addArtistToFav(id: string) {
-    if (!this.favs.artists) this.favs.artists = [];
-    if (this.favs.artists.indexOf(id) < 0) {
-      this.favs.artists.push(id);
+  async allAlbums(): Promise<Album[]> {
+    const allAlbums = await this.dbAlbumRepository.find({
+      relations: { artistId: true },
+    });
+    return allAlbums.map((data) => {
+      let value: Album = new Album();
+      value = this.copyObjectByKeys(data, value, false, ['artistId']);
+      return value;
+    });
+  }
+
+  async removeAlbum(id: string) {
+    const albumToRemove = await this.dbAlbumRepository.findOneBy({
+      id: id,
+    });
+    if (albumToRemove) await this.dbAlbumRepository.remove(albumToRemove);
+    await this.removeFromFav(FAVORITE_TYPES.album, id);
+  }
+
+  async getArtist(id: string): Promise<Artist> {
+    let artist = new Artist();
+    const currentArtist = await this.dbArtistRepository.findOneBy({
+      id: id,
+    });
+    artist = this.copyObjectByKeys(currentArtist, artist);
+    return artist;
+  }
+  async setArtist(artist: Artist) {
+    let artistModel = new DBArtist();
+    artistModel = this.copyObjectByKeys(artist, artistModel);
+    await AppDataSource.manager.save(artistModel);
+  }
+  async allArtists(): Promise<Artist[]> {
+    const allArtists = await this.dbArtistRepository.find();
+    return allArtists.map((data) => {
+      let value: Artist = new Artist();
+      value = this.copyObjectByKeys(data, value, true);
+      return value;
+    });
+  }
+
+  async removeArtist(id: string) {
+    await this.removeFromFav(FAVORITE_TYPES.artist, id);
+    const artistToRemove = await this.dbArtistRepository.findOneBy({
+      id: id,
+    });
+    if (artistToRemove) await this.dbArtistRepository.remove(artistToRemove);
+  }
+
+  async getTrack(id: string): Promise<Track> {
+    let track = new Track();
+    const currentTrack = await this.dbTrackRepository.findOneBy({
+      id: id,
+    });
+    track = this.copyObjectByKeys(currentTrack, track, false, [
+      'artistId',
+      'albumId',
+    ]);
+    return track;
+  }
+  async setTrack(track: Track) {
+    let trackModel = new DBTrack();
+    trackModel = this.copyObjectByKeys(track, trackModel);
+    if (track.artistId != null) {
+      trackModel.artistId = await this.dbArtistRepository.findOneBy({
+        id: track.artistId,
+      });
     }
-  }
-  addAlbumToFav(id: string) {
-    if (!this.favs.albums) this.favs.albums = [];
-    if (this.favs.albums.indexOf(id) < 0) {
-      this.favs.albums.push(id);
+    if (track.albumId != null) {
+      trackModel.albumId = await this.dbAlbumRepository.findOneBy({
+        id: track.albumId,
+      });
     }
+    await AppDataSource.manager.save(trackModel);
   }
-  getFromFav(key: string): string[] {
-    let result = this.favs[key];
-    if (!result) result = [];
+  async allTracks(): Promise<Track[]> {
+    const allTracks = await this.dbTrackRepository.find({
+      relations: { artistId: true, albumId: true },
+    });
+    return allTracks.map((data) => {
+      let value: Track = new Track();
+      value = this.copyObjectByKeys(data, value, false, [
+        'artistId',
+        'albumId',
+      ]);
+      return value;
+    });
+  }
+  async removeTrack(id: string) {
+    this.removeFromFav(FAVORITE_TYPES.track, id);
+    const trackToRemove = await this.dbTrackRepository.findOneBy({
+      id: id,
+    });
+    if (trackToRemove) await this.dbTrackRepository.remove(trackToRemove);
+  }
+
+  async addTrackToFav(id: string) {
+    const favToRemove = await this.dbFavoriteRepository.findOneBy({
+      id: id,
+    });
+    if (favToRemove) await this.dbFavoriteRepository.remove(favToRemove);
+    const favModel = new DBFavorite();
+    favModel.id = id;
+    favModel.type = FAVORITE_TYPES.track;
+    await AppDataSource.manager.save(favModel);
+  }
+  async addArtistToFav(id: string) {
+    const favToRemove = await this.dbFavoriteRepository.findOneBy({
+      id: id,
+    });
+    if (favToRemove) await this.dbFavoriteRepository.remove(favToRemove);
+    const favModel = new DBFavorite();
+    favModel.id = id;
+    favModel.type = FAVORITE_TYPES.artist;
+    await AppDataSource.manager.save(favModel);
+  }
+  async addAlbumToFav(id: string) {
+    const favToRemove = await this.dbFavoriteRepository.findOneBy({
+      id: id,
+    });
+    if (favToRemove) await this.dbFavoriteRepository.remove(favToRemove);
+    const favModel = new DBFavorite();
+    favModel.id = id;
+    favModel.type = FAVORITE_TYPES.album;
+    await AppDataSource.manager.save(favModel);
+  }
+  async getFromFav(key: string): Promise<string[]> {
+    const favsByType = await this.dbFavoriteRepository.findBy({
+      type: key,
+    });
+    return favsByType.map((value) => value.id);
+  }
+  async removeFromFav(key: string, id: string): Promise<string[]> {
+    const result = await this.getFromFav(key);
+    const favToRemove = await this.dbFavoriteRepository.findOneBy({
+      id: id,
+    });
+    if (favToRemove) await this.dbFavoriteRepository.remove(favToRemove);
     return result;
   }
-  removeFromFav(key: string, id: string): string[] {
-    let result = this.favs[key];
-    if (!result) result = [];
-    this.favs[key] = result.filter((data: string) => data !== id);
-    return result;
+
+  async favHasTrack(id: string): Promise<boolean> {
+    const favoriteEntity = await this.dbFavoriteRepository.findOneBy({
+      id: id,
+    });
+    return favoriteEntity && favoriteEntity.type === FAVORITE_TYPES.track;
   }
-  favHasTrack(id: string): boolean {
-    return this.favs.tracks && this.favs.tracks.indexOf(id) > -1;
+  async favHasAlbum(id: string): Promise<boolean> {
+    const favoriteEntity = await this.dbFavoriteRepository.findOneBy({
+      id: id,
+    });
+    return favoriteEntity && favoriteEntity.type === FAVORITE_TYPES.album;
   }
-  favHasAlbum(id: string): boolean {
-    return this.favs.albums && this.favs.albums.indexOf(id) > -1;
-  }
-  favHasArtist(id: string): boolean {
-    return this.favs.artists && this.favs.artists.indexOf(id) > -1;
+  async favHasArtist(id: string): Promise<boolean> {
+    const favoriteEntity = await this.dbFavoriteRepository.findOneBy({
+      id: id,
+    });
+    return favoriteEntity && favoriteEntity.type === FAVORITE_TYPES.artist;
   }
 }

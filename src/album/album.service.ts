@@ -12,7 +12,7 @@ import { Album, DBResponse } from '../common/types';
 export class AlbumService {
   constructor(private db: DataBase) {}
 
-  create(album: Album): DBResponse {
+  async create(album: Album): Promise<DBResponse> {
     const response = new DBResponse();
     const validate =
       stringAndExist(album.name) &&
@@ -27,17 +27,17 @@ export class AlbumService {
     newAlbum.year = album.year;
     newAlbum.artistId = album.artistId;
     newAlbum.id = newUUID();
-    this.db.setAlbum(newAlbum);
+    await this.db.setAlbum(newAlbum);
     response.code = 200;
     response.data = newAlbum;
     return response;
   }
 
-  getAllAlbums(): Album[] {
-    return this.db.allAlbums();
+  async getAllAlbums(): Promise<Album[]> {
+    return await this.db.allAlbums();
   }
 
-  getAlbum(id: string): DBResponse {
+  async getAlbum(id: string): Promise<DBResponse> {
     const response = new DBResponse();
     const valid = validate(id);
     if (!valid) {
@@ -45,8 +45,8 @@ export class AlbumService {
       response.message = `Id ${id} is not valid`;
       return response;
     }
-    const album = this.db.getAlbum(id);
-    if (!album) {
+    const album = await this.db.getAlbum(id);
+    if (!album || !album.id) {
       response.code = 404;
       response.message = `Album with id ${id} not found`;
       return response;
@@ -56,16 +56,16 @@ export class AlbumService {
     return response;
   }
 
-  removeAlbum(id: string): DBResponse {
-    const response = this.getAlbum(id);
-    if (!response.data) return response;
-    this.db.removeAlbum(id);
+  async removeAlbum(id: string): Promise<DBResponse> {
+    const response = await this.getAlbum(id);
+    if (!response.data || !response.data.id) return response;
+    await this.db.removeAlbum(id);
     return response;
   }
 
-  changeAlbum(id: string, album: Album): DBResponse {
-    const response = this.getAlbum(id);
-    if (!response.data) {
+  async changeAlbum(id: string, album: Album): Promise<DBResponse> {
+    const response = await this.getAlbum(id);
+    if (!response.data || !response.data.id) {
       return response;
     }
     const validate =
@@ -78,8 +78,8 @@ export class AlbumService {
       return response;
     }
     album.id = response.data.id;
-    this.db.setAlbum(album);
-    response.data = this.db.getAlbum(id);
+    await this.db.setAlbum(album);
+    response.data = await this.db.getAlbum(id);
     return response;
   }
 }

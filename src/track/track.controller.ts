@@ -20,14 +20,17 @@ export class TrackController {
   constructor(private trackService: TrackService) {}
 
   @Get()
-  getAllTracks(@Res() res: Response): string {
-    res.status(HttpStatus.OK).send(this.trackService.getAllTracks());
+  async getAllTracks(@Res() res: Response): Promise<string> {
+    res.status(HttpStatus.OK).send(await this.trackService.getAllTracks());
     return '';
   }
   @Get(':id')
-  getTrackById(@Param('id') id: string, @Res() res: Response): string {
-    const dbResponse = this.trackService.getTrack(id);
-    if (!dbResponse.data) {
+  async getTrackById(
+    @Param('id') id: string,
+    @Res() res: Response,
+  ): Promise<string> {
+    const dbResponse = await this.trackService.getTrack(id);
+    if (!dbResponse.data || !dbResponse.data.id) {
       throw new HttpException(dbResponse.message, dbResponse.code);
     }
     res.status(HttpStatus.OK).send(dbResponse.data);
@@ -35,7 +38,7 @@ export class TrackController {
   }
   @Post()
   async create(@Body() track: Track, @Res() res: Response) {
-    const result = this.trackService.create(track);
+    const result = await this.trackService.create(track);
     if (result.code === 400)
       throw new HttpException('Data missing', result.code);
     res.status(HttpStatus.CREATED).send(result.data);
@@ -46,15 +49,15 @@ export class TrackController {
     @Body() track: Track,
     @Res() res: Response,
   ) {
-    const result = this.trackService.changeTrack(id, track);
+    const result = await this.trackService.changeTrack(id, track);
     if (result.code !== 200)
       throw new HttpException(result.message, result.code);
     res.status(HttpStatus.OK).send(result.data);
   }
   @Delete(':id')
   @HttpCode(204)
-  delUserById(@Param('id') id: string) {
-    const result = this.trackService.removeTrack(id);
+  async delUserById(@Param('id') id: string) {
+    const result = await this.trackService.removeTrack(id);
     if (result.code !== 200)
       throw new HttpException(result.message, result.code);
   }

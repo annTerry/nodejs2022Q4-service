@@ -6,6 +6,7 @@ import { DBResponse } from '../common/types';
 import { TrackService } from 'src/track/track.service';
 import { AlbumService } from 'src/album/album.service';
 import { ArtistService } from 'src/artist/artist.service';
+import { FAVORITE_TYPES } from '../common/const';
 
 @Injectable()
 export class FavService {
@@ -16,54 +17,66 @@ export class FavService {
     private artistService: ArtistService,
   ) {}
 
-  getAllFavs(): FavoritesResponse {
+  async getAllFavs(): Promise<FavoritesResponse> {
     const favResponse = new FavoritesResponse();
-    const favTracks = this.db.getFromFav('tracks');
-    const favAlbums = this.db.getFromFav('albums');
-    const favArtists = this.db.getFromFav('artists');
-    favResponse.tracks = this.trackService
-      .getAllTracks()
-      .filter((object) => favTracks.indexOf(object.id) > -1);
-    favResponse.albums = this.albumService
-      .getAllAlbums()
-      .filter((object) => favAlbums.indexOf(object.id) > -1);
-    favResponse.artists = this.artistService
-      .getAllArtists()
-      .filter((object) => favArtists.indexOf(object.id) > -1);
+    const favTracks = await this.db.getFromFav(FAVORITE_TYPES.track);
+    const favAlbums = await this.db.getFromFav(FAVORITE_TYPES.album);
+    const favArtists = await this.db.getFromFav(FAVORITE_TYPES.artist);
+    favResponse.tracks = await this.trackService.getAllTracks();
+    favResponse.tracks = favResponse.tracks.filter(
+      (object) => favTracks.indexOf(object.id) > -1,
+    );
+    favResponse.albums = await this.albumService.getAllAlbums();
+    favResponse.albums = favResponse.albums.filter(
+      (object) => favAlbums.indexOf(object.id) > -1,
+    );
+    favResponse.artists = await this.artistService.getAllArtists();
+    favResponse.artists = favResponse.artists.filter(
+      (object) => favArtists.indexOf(object.id) > -1,
+    );
     return favResponse;
   }
 
-  addTrack(id: string): DBResponse {
-    const response = this.trackService.getTrack(id);
+  async addTrack(id: string): Promise<DBResponse> {
+    const response = await this.trackService.getTrack(id);
     if (response.code === 404) {
       response.code = 422;
       return response;
     }
-    this.db.addTrackToFav(id);
+    if (response.code === 400) {
+      return response;
+    }
+    await this.db.addTrackToFav(id);
     return response;
   }
 
-  addAlbum(id: string): DBResponse {
-    const response = this.albumService.getAlbum(id);
+  async addAlbum(id: string): Promise<DBResponse> {
+    const response = await this.albumService.getAlbum(id);
     if (response.code === 404) {
       response.code = 422;
       return response;
     }
-    this.db.addAlbumToFav(id);
+    if (response.code === 400) {
+      return response;
+    }
+    await this.db.addAlbumToFav(id);
     return response;
   }
 
-  addArtist(id: string): DBResponse {
-    const response = this.artistService.getArtist(id);
+  async addArtist(id: string): Promise<DBResponse> {
+    const response = await this.artistService.getArtist(id);
     if (response.code === 404) {
       response.code = 422;
       return response;
     }
-    this.db.addArtistToFav(id);
+    if (response.code === 400) {
+      return response;
+    }
+    await this.db.addArtistToFav(id);
     return response;
   }
 
-  removeTrack(id: string): DBResponse {
+  async removeTrack(id: string): Promise<DBResponse> {
     const response = new DBResponse();
     const val = validate(id);
     if (!val) {
@@ -71,17 +84,17 @@ export class FavService {
       response.message = `Id ${id} is not valid`;
       return response;
     }
-    if (!this.db.favHasTrack(id)) {
+    if (!(await this.db.favHasTrack(id))) {
       response.code = 404;
       response.message = `Track is not in Favorites`;
       return response;
     }
-    this.db.removeFromFav('tracks', id);
+    await this.db.removeFromFav(FAVORITE_TYPES.track, id);
     response.code = 204;
     return response;
   }
 
-  removeAlbum(id: string): DBResponse {
+  async removeAlbum(id: string): Promise<DBResponse> {
     const response = new DBResponse();
     const val = validate(id);
     if (!val) {
@@ -89,17 +102,17 @@ export class FavService {
       response.message = `Id ${id} is not valid`;
       return response;
     }
-    if (!this.db.favHasAlbum(id)) {
+    if (!(await this.db.favHasAlbum(id))) {
       response.code = 404;
       response.message = `Album is not in Favorites`;
       return response;
     }
-    this.db.removeFromFav('albums', id);
+    await this.db.removeFromFav(FAVORITE_TYPES.album, id);
     response.code = 204;
     return response;
   }
 
-  removeArtist(id: string): DBResponse {
+  async removeArtist(id: string): Promise<DBResponse> {
     const response = new DBResponse();
     const val = validate(id);
     if (!val) {
@@ -107,12 +120,12 @@ export class FavService {
       response.message = `Id ${id} is not valid`;
       return response;
     }
-    if (!this.db.favHasArtist(id)) {
+    if (!(await this.db.favHasArtist(id))) {
       response.code = 404;
       response.message = `Artist is not in Favorites`;
       return response;
     }
-    this.db.removeFromFav('artists', id);
+    await this.db.removeFromFav(FAVORITE_TYPES.artist, id);
     response.code = 204;
     return response;
   }
