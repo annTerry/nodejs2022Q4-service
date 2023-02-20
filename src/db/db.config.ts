@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
-import { User, Track, Album, Artist } from './db.entities';
+import { User, Track, Album, Artist, Favorites } from './db.entities';
 import {
   POSTGRES_PORT,
   POSTGRES_PASSWORD,
@@ -16,8 +16,8 @@ export const AppDataSource = new DataSource({
   password: POSTGRES_PASSWORD,
   database: POSTGRES_DB,
   synchronize: true,
-  logging: true,
-  entities: [User, Track, Album, Artist],
+  //logging: true,
+  entities: [User, Track, Album, Artist, Favorites],
   subscribers: [],
   migrations: [],
 });

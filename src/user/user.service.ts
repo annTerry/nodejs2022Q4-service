@@ -63,10 +63,8 @@ export class UserService {
 
   async removeUser(id: string): Promise<DBResponse> {
     const response = await this.getUser(id);
-
-    console.log(JSON.stringify(response));
     if (response.code !== 200) return response;
-    this.db.removeUser(id);
+    await this.db.removeUser(id);
     return response;
   }
 

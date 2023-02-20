@@ -16,13 +16,13 @@ import { FavService } from './favor.service';
 export class FavsController {
   constructor(private favService: FavService) {}
   @Get()
-  getAllFavs(@Res() res: Response): string {
-    res.status(HttpStatus.OK).send(this.favService.getAllFavs());
+  async getAllFavs(@Res() res: Response): Promise<string> {
+    res.status(HttpStatus.OK).send(await this.favService.getAllFavs());
     return '';
   }
   @Post('track/:id')
   async addTrack(@Param('id') id: string, @Res() res: Response) {
-    const result = this.favService.addTrack(id);
+    const result = await this.favService.addTrack(id);
     if (result.code === 400)
       throw new HttpException('Data missing', result.code);
     if (result.code === 422)
@@ -31,7 +31,7 @@ export class FavsController {
   }
   @Post('album/:id')
   async addAlbum(@Param('id') id: string, @Res() res: Response) {
-    const result = this.favService.addAlbum(id);
+    const result = await this.favService.addAlbum(id);
     if (result.code === 400)
       throw new HttpException('Data missing', result.code);
     if (result.code === 422)
@@ -40,7 +40,7 @@ export class FavsController {
   }
   @Post('artist/:id')
   async addArtist(@Param('id') id: string, @Res() res: Response) {
-    const result = this.favService.addArtist(id);
+    const result = await this.favService.addArtist(id);
     if (result.code === 400)
       throw new HttpException('Data missing', result.code);
     if (result.code === 422)
@@ -51,7 +51,7 @@ export class FavsController {
   @Delete('track/:id')
   @HttpCode(204)
   async removeTrack(@Param('id') id: string) {
-    const result = this.favService.removeTrack(id);
+    const result = await this.favService.removeTrack(id);
     if (result.code !== 204)
       throw new HttpException(result.message, result.code);
   }
@@ -59,7 +59,7 @@ export class FavsController {
   @Delete('album/:id')
   @HttpCode(204)
   async removeAlbum(@Param('id') id: string) {
-    const result = this.favService.removeAlbum(id);
+    const result = await this.favService.removeAlbum(id);
     if (result.code !== 204)
       throw new HttpException(result.message, result.code);
   }
@@ -67,7 +67,7 @@ export class FavsController {
   @Delete('artist/:id')
   @HttpCode(204)
   async removeArtist(@Param('id') id: string) {
-    const result = this.favService.removeArtist(id);
+    const result = await this.favService.removeArtist(id);
     if (result.code !== 204)
       throw new HttpException(result.message, result.code);
   }

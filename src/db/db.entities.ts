@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryColumn } from 'typeorm';
+import { Entity, Column, PrimaryColumn, OneToMany, ManyToOne } from 'typeorm';
 
 @Entity()
 export class User {
@@ -22,24 +22,6 @@ export class User {
 }
 
 @Entity()
-export class Track {
-  @PrimaryColumn()
-  id: string;
-
-  @Column()
-  name: string;
-
-  @Column()
-  artistId: string | null;
-
-  @Column()
-  albumId: string | null;
-
-  @Column()
-  duration: number;
-}
-
-@Entity()
 export class Artist {
   @PrimaryColumn()
   id: string;
@@ -49,6 +31,16 @@ export class Artist {
 
   @Column()
   grammy: boolean;
+
+  @OneToMany(() => Track, (track) => track.id, {
+    onDelete: 'CASCADE',
+  })
+  track: Track[] | null;
+
+  @OneToMany(() => Album, (album) => album.id, {
+    onDelete: 'CASCADE',
+  })
+  album: Album[] | null;
 }
 
 @Entity()
@@ -62,12 +54,47 @@ export class Album {
   @Column()
   year: number;
 
-  @Column()
-  artistId: string | null;
+  @ManyToOne(() => Artist, (artist) => artist.id, {
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
+  artistId: Artist | null;
+
+  @OneToMany(() => Track, (track) => track.id, {
+    onDelete: 'CASCADE',
+  })
+  track: Track[];
 }
 
+@Entity()
+export class Track {
+  @PrimaryColumn()
+  id: string;
+
+  @Column()
+  name: string;
+
+  @ManyToOne(() => Artist, (artist) => artist.id, {
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
+  artistId: Artist | null;
+
+  @ManyToOne(() => Album, (album) => album.id, {
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
+  albumId: Artist | null;
+
+  @Column()
+  duration: number;
+}
+
+@Entity()
 export class Favorites {
-  artists: string[];
-  albums: string[];
-  tracks: string[];
+  @PrimaryColumn()
+  id: string;
+
+  @Column()
+  type: string;
 }
