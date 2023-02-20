@@ -2,6 +2,7 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
+export const RUN_MIGRATION = process.env.RUN_MIGRATION === 'true' || false;
 export const CLEAN_DB = process.env.CLEAN_DB === 'true' || false;
 export const PORT = process.env.PORT || 4000;
 export const POSTGRES_PORT = process.env.POSTGRES_PORT || 5432;

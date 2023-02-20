@@ -24,7 +24,7 @@ git checkout postgre
 ### Install and run
 ```
 docker-compose build
-dockerdocker-compose up
+docker-compose up
 ```
 
  Please wait for application full start
@@ -53,5 +53,8 @@ In running container with app (it names nodejs2022q4-service app) run tests with
 ```
 npm run test
 ```
+### Migrations
+Migration file in src/migrations/CreateTable.ts, it runs in src/db/db.config.ts
+
 ### Addition
 In .env you can set PORT and by CLEAN_DB can clean db tables before start tests
