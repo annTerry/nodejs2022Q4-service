@@ -11,7 +11,7 @@ import { RefreshDto } from '../dto/user.dto';
 import { RefreshService } from './refresh.service';
 
 @Controller('auth/login')
-export class LoginController {
+export class RefreshController {
   constructor(private signupService: RefreshService) {}
 
   @Post() async create(@Body() token: RefreshDto, @Res() res: Response) {

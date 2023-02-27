@@ -3,8 +3,10 @@ import { CreateUserDto, UpdatePasswordDto } from '../dto/user.dto';
 import { v4 as newUUID, validate } from 'uuid';
 import { stringAndExist } from '../common/utility';
 import { DataBase } from 'src/db/db.service';
-import { User, ClearUser, DBResponse } from '../common/types';
-import bcrypt from 'bcrypt';
+import { User, ClearUser, DBResponse, Token } from '../common/types';
+import * as bcrypt from 'bcrypt';
+import * as jwt from 'jsonwebtoken';
+import { JWT_SECRET_KEY, TOKEN_EXPIRE_TIME } from 'src/common/const';
 
 @Injectable()
 export class UserService {
@@ -80,6 +82,12 @@ export class UserService {
     const user = await this.db.getUserByPassword(login, password);
     if (user && user.id) {
       response.code = 200;
+      response.data = new Token();
+      response.data.token = jwt.sign(
+        { login: login, password: password },
+        JWT_SECRET_KEY,
+        { expiresIn: TOKEN_EXPIRE_TIME },
+      );
     } else {
       response.code = 403;
       response.message = 'Wrong Login or Password';
@@ -102,10 +110,8 @@ export class UserService {
     response = await this.getUser(id);
     if (!response.data) return response;
     const user = await this.db.getUser(id);
-    const hashPass = await bcrypt.hash(
-      updatePasswordDto.oldPassword,
-      this.db.saltRounds,
-    );
+    const salt = bcrypt.genSaltSync(+this.db.saltRounds);
+    const hashPass = await bcrypt.hash(updatePasswordDto.oldPassword, salt);
     if (user.id && user.password !== hashPass) {
       response.code = 403;
       response.message = 'Old password is wrong';

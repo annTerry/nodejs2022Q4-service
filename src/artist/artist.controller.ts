@@ -27,7 +27,8 @@ export class ArtistController {
   @Get(':id')
   async getUserById(@Param('id') id: string): Promise<string> {
     const dbResponse = await this.artistService.getArtist(id);
-    if (!dbResponse.data || !dbResponse.data.id) {
+    const dataRes = dbResponse.data as Artist;
+    if (!dataRes || !dataRes.id) {
       throw new HttpException(dbResponse.message, dbResponse.code);
     }
     return JSON.stringify(dbResponse.data);

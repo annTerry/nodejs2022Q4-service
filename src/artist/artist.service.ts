@@ -51,7 +51,8 @@ export class ArtistService {
 
   async removeArtist(id: string): Promise<DBResponse> {
     const response = await this.getArtist(id);
-    if (!response.data || !response.data.id) return response;
+    const dataRes = response.data as Artist;
+    if (!dataRes || !dataRes.id) return response;
     await this.db.removeArtist(id);
     return response;
   }
@@ -66,10 +67,11 @@ export class ArtistService {
       return response;
     }
     response = await this.getArtist(id);
-    if (!response.data || !response.data.id) {
+    const dataRes = response.data as Artist;
+    if (!dataRes || !dataRes.id) {
       return response;
     }
-    artist.id = response.data.id;
+    artist.id = dataRes.id;
     await this.db.setArtist(artist);
     response.data = await this.db.getArtist(artist.id);
     return response;

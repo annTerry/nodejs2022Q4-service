@@ -79,7 +79,8 @@ export class TrackService {
     }
     response = await this.getTrack(id);
     if (!response.data) return response;
-    track.id = response.data.id;
+    const dataRS = response.data as Track;
+    track.id = dataRS.id;
     await this.db.setTrack(track);
     response.data = await this.db.getTrack(id);
     return response;

@@ -27,7 +27,8 @@ export class AlbumController {
   @Get(':id')
   async getAlbumById(@Param('id') id: string): Promise<string> {
     const dbResponse = await this.albumService.getAlbum(id);
-    if (!dbResponse.data || !dbResponse.data.id) {
+    const data = dbResponse.data as Album;
+    if (!data || !data.id) {
       throw new HttpException(dbResponse.message, dbResponse.code);
     }
     return JSON.stringify(dbResponse.data);

@@ -58,14 +58,16 @@ export class AlbumService {
 
   async removeAlbum(id: string): Promise<DBResponse> {
     const response = await this.getAlbum(id);
-    if (!response.data || !response.data.id) return response;
+    const data = response.data as Album;
+    if (!data || !data.id) return response;
     await this.db.removeAlbum(id);
     return response;
   }
 
   async changeAlbum(id: string, album: Album): Promise<DBResponse> {
     const response = await this.getAlbum(id);
-    if (!response.data || !response.data.id) {
+    const data = response.data as Album;
+    if (!data || !data.id) {
       return response;
     }
     const validate =
@@ -77,7 +79,8 @@ export class AlbumService {
       response.message = `Wrong data`;
       return response;
     }
-    album.id = response.data.id;
+    const dataRes = response.data as Album;
+    album.id = dataRes.id;
     await this.db.setAlbum(album);
     response.data = await this.db.getAlbum(id);
     return response;

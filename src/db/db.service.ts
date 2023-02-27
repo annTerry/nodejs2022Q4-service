@@ -1,5 +1,5 @@
 import { User, Album, Artist, Track, ClearUser } from '../common/types';
-import bcrypt from 'bcrypt';
+import * as bcrypt from 'bcrypt';
 import {
   User as DBUser,
   Artist as DBArtist,
@@ -9,7 +9,7 @@ import {
 } from './db.entities';
 import { Injectable } from '@nestjs/common';
 import { AppDataSource } from './db.config';
-import { FAVORITE_TYPES } from '../common/const';
+import { FAVORITE_TYPES, CRYPT_SALT } from '../common/const';
 
 @Injectable()
 export class DataBase {
@@ -18,7 +18,7 @@ export class DataBase {
   private dbTrackRepository = AppDataSource.getRepository(DBTrack);
   private dbAlbumRepository = AppDataSource.getRepository(DBAlbum);
   private dbFavoriteRepository = AppDataSource.getRepository(DBFavorite);
-  saltRounds = 10;
+  saltRounds = CRYPT_SALT;
 
   private copyObjectByKeys<T, N>(
     inputData: N,
@@ -56,14 +56,15 @@ export class DataBase {
     return user;
   }
 
-  async getUserByPassword(login: string, password: string): Promise<User> {
-    let user = new User();
-    const hashPass = await bcrypt.hash(password, this.saltRounds);
+  async getUserByPassword(login: string, password: string): Promise<ClearUser> {
+    let user = new ClearUser();
     const currentUser = await this.dbUserRepository.findOneBy({
       login: login,
-      password: hashPass,
     });
-    user = this.copyObjectByKeys(currentUser, user);
+    if (currentUser && currentUser.password) {
+      const result = await bcrypt.compare(password, currentUser.password);
+      if (result) user = this.copyObjectByKeys(currentUser, user);
+    }
     return user;
   }
 
@@ -77,7 +78,11 @@ export class DataBase {
   }
 
   async setUser(user: User) {
-    user.password = await bcrypt.hash(user.password, this.saltRounds);
+    console.log(user.password);
+    console.log(this.saltRounds);
+    const salt = bcrypt.genSaltSync(+this.saltRounds);
+    user.password = await bcrypt.hash(user.password, salt);
+    console.log(user.password);
     let userModel = new DBUser();
     userModel = this.copyObjectByKeys(user, userModel);
     await AppDataSource.manager.save(userModel);

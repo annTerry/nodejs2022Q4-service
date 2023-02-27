@@ -30,7 +30,8 @@ export class TrackController {
     @Res() res: Response,
   ): Promise<string> {
     const dbResponse = await this.trackService.getTrack(id);
-    if (!dbResponse.data || !dbResponse.data.id) {
+    const dataRS = dbResponse.data as Track;
+    if (!dataRS || !dataRS.id) {
       throw new HttpException(dbResponse.message, dbResponse.code);
     }
     res.status(HttpStatus.OK).send(dbResponse.data);

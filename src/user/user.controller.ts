@@ -12,6 +12,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { ClearUser } from 'src/common/types';
 import { CreateUserDto, UpdatePasswordDto } from '../dto/user.dto';
 import { UserService } from './user.service';
 
@@ -27,7 +28,8 @@ export class UserController {
   @Get(':id')
   async getUserById(@Param('id') id: string): Promise<string> {
     const dbResponse = await this.userService.getUser(id);
-    if (!dbResponse.data || !dbResponse.data.id) {
+    const resData = dbResponse.data as ClearUser;
+    if (!resData || !resData.id) {
       throw new HttpException(dbResponse.message, dbResponse.code);
     }
     return JSON.stringify(dbResponse.data);
