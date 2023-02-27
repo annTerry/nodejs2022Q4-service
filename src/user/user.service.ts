@@ -4,6 +4,7 @@ import { v4 as newUUID, validate } from 'uuid';
 import { stringAndExist } from '../common/utility';
 import { DataBase } from 'src/db/db.service';
 import { User, ClearUser, DBResponse } from '../common/types';
+import bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
@@ -101,7 +102,11 @@ export class UserService {
     response = await this.getUser(id);
     if (!response.data) return response;
     const user = await this.db.getUser(id);
-    if (user.id && user.password !== updatePasswordDto.oldPassword) {
+    const hashPass = await bcrypt.hash(
+      updatePasswordDto.oldPassword,
+      this.db.saltRounds,
+    );
+    if (user.id && user.password !== hashPass) {
       response.code = 403;
       response.message = 'Old password is wrong';
       return response;

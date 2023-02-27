@@ -1,4 +1,5 @@
 import { User, Album, Artist, Track, ClearUser } from '../common/types';
+import bcrypt from 'bcrypt';
 import {
   User as DBUser,
   Artist as DBArtist,
@@ -17,6 +18,7 @@ export class DataBase {
   private dbTrackRepository = AppDataSource.getRepository(DBTrack);
   private dbAlbumRepository = AppDataSource.getRepository(DBAlbum);
   private dbFavoriteRepository = AppDataSource.getRepository(DBFavorite);
+  saltRounds = 10;
 
   private copyObjectByKeys<T, N>(
     inputData: N,
@@ -56,9 +58,10 @@ export class DataBase {
 
   async getUserByPassword(login: string, password: string): Promise<User> {
     let user = new User();
+    const hashPass = await bcrypt.hash(password, this.saltRounds);
     const currentUser = await this.dbUserRepository.findOneBy({
       login: login,
-      password: password,
+      password: hashPass,
     });
     user = this.copyObjectByKeys(currentUser, user);
     return user;
@@ -74,6 +77,7 @@ export class DataBase {
   }
 
   async setUser(user: User) {
+    user.password = await bcrypt.hash(user.password, this.saltRounds);
     let userModel = new DBUser();
     userModel = this.copyObjectByKeys(user, userModel);
     await AppDataSource.manager.save(userModel);
