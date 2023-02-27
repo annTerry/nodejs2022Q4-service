@@ -68,6 +68,23 @@ export class UserService {
     return response;
   }
 
+  async checkUser(login: string, password: string): Promise<DBResponse> {
+    const response = new DBResponse();
+    const validData = stringAndExist(login) && stringAndExist(password);
+    if (!validData) {
+      response.code = 400;
+      response.message = 'Wrong data';
+      return response;
+    }
+    const user = await this.db.getUserByPassword(login, password);
+    if (user && user.id) {
+      response.code = 200;
+    } else {
+      response.code = 403;
+      response.message = 'Wrong Login or Password';
+    }
+    return response;
+  }
   async changePassword(
     id: string,
     updatePasswordDto: UpdatePasswordDto,

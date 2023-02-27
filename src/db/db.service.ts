@@ -54,6 +54,16 @@ export class DataBase {
     return user;
   }
 
+  async getUserByPassword(login: string, password: string): Promise<User> {
+    let user = new User();
+    const currentUser = await this.dbUserRepository.findOneBy({
+      login: login,
+      password: password,
+    });
+    user = this.copyObjectByKeys(currentUser, user);
+    return user;
+  }
+
   async getClearUser(id: string): Promise<ClearUser> {
     let clearUser = new ClearUser();
     const currentUser = await this.dbUserRepository.findOneBy({

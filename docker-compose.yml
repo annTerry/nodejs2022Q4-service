@@ -12,6 +12,8 @@ services:
     volumes:
       - ./:/usr/app/.
     restart: always
+    networks:
+     - my_network
   postgres:
     image: nodejs2022-db
     build: ${BASE_URL}
@@ -25,4 +27,11 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - ${BASE_URL}/pgdata:/var/lib/postgres/data
-    restart: always      
+    restart: always
+    networks:
+     - my_network
+volumes:
+  pgdata:
+networks:
+   my_network:
+     driver: bridge           
