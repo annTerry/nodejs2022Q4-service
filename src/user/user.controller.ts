@@ -9,31 +9,57 @@ import {
   HttpException,
   HttpCode,
   Res,
+  Req,
   HttpStatus,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { Request, Response } from 'express';
+import { ClearUser } from 'src/common/types';
 import { CreateUserDto, UpdatePasswordDto } from '../dto/user.dto';
 import { UserService } from './user.service';
+import { accessCheck } from 'src/common/access';
 
 @Controller('user')
 export class UserController {
   constructor(private userService: UserService) {}
 
   @Get()
-  getAllUsers(@Res() res: Response): string {
-    res.status(HttpStatus.OK).send(this.userService.getAllUsers());
+  async getAllUsers(
+    @Res() res: Response,
+    @Req() request: Request,
+  ): Promise<string> {
+    const auth = accessCheck(request.headers.authorization);
+    if (auth.code === 401) {
+      throw new HttpException('Not Authorized', auth.code);
+    }
+    res.status(HttpStatus.OK).send(await this.userService.getAllUsers());
     return '';
   }
   @Get(':id')
-  getUserById(@Param('id') id: string): string {
-    const dbResponse = this.userService.getUser(id);
-    if (!dbResponse.data) {
+  async getUserById(
+    @Param('id') id: string,
+    @Req() request: Request,
+  ): Promise<string> {
+    const auth = accessCheck(request.headers.authorization);
+    if (auth.code === 401) {
+      throw new HttpException('Not Authorized', auth.code);
+    }
+    const dbResponse = await this.userService.getUser(id);
+    const resData = dbResponse.data as ClearUser;
+    if (!resData || !resData.id) {
       throw new HttpException(dbResponse.message, dbResponse.code);
     }
     return JSON.stringify(dbResponse.data);
   }
   @Post()
-  async create(@Body() createUserDto: CreateUserDto, @Res() res: Response) {
+  async create(
+    @Body() createUserDto: CreateUserDto,
+    @Req() request: Request,
+    @Res() res: Response,
+  ) {
+    const auth = accessCheck(request.headers.authorization);
+    if (auth.code === 401) {
+      throw new HttpException('Not Authorized', auth.code);
+    }
     const dbResponse = await this.userService.create(createUserDto);
     if (dbResponse.code === 400)
       throw new HttpException('Data missing', dbResponse.code);
@@ -44,7 +70,12 @@ export class UserController {
     @Param('id') id: string,
     @Body() updatePasswordDto: UpdatePasswordDto,
     @Res() res: Response,
+    @Req() request: Request,
   ) {
+    const auth = accessCheck(request.headers.authorization);
+    if (auth.code === 401) {
+      throw new HttpException('Not Authorized', auth.code);
+    }
     const result = await this.userService.changePassword(id, updatePasswordDto);
     if (result.code !== 200)
       throw new HttpException(result.message, result.code);
@@ -52,8 +83,12 @@ export class UserController {
   }
   @Delete(':id')
   @HttpCode(204)
-  delUserById(@Param('id') id: string) {
-    const result = this.userService.removeUser(id);
+  async delUserById(@Param('id') id: string, @Req() request: Request) {
+    const auth = accessCheck(request.headers.authorization);
+    if (auth.code === 401) {
+      throw new HttpException('Not Authorized', auth.code);
+    }
+    const result = await this.userService.removeUser(id);
     if (result.code !== 200)
       throw new HttpException(result.message, result.code);
   }

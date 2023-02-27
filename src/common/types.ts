@@ -18,7 +18,7 @@ export class ClearUser {
 export class DBResponse {
   code: number;
   message: string;
-  data: ClearUser | Track | Artist | Album;
+  data: ClearUser | Track | Artist | Album | Token;
 }
 
 export class Track {
@@ -27,6 +27,11 @@ export class Track {
   artistId: string | null;
   albumId: string | null;
   duration: number;
+}
+
+export class Token {
+  accessToken?: string;
+  refreshToken?: string;
 }
 
 export class Artist {

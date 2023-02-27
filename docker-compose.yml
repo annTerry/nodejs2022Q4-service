@@ -11,10 +11,13 @@ services:
       - PORT=${PORT}
     volumes:
       - ./:/usr/app/.
+      - '/usr/app/node_modules'
     restart: always
+    networks:
+     - my_network
   postgres:
     image: nodejs2022-db
-    build: ./postgres
+    build: ${BASE_URL}
     ports:
       - ${POSTGRES_PORT}:${POSTGRES_PORT}
     env_file:
@@ -24,7 +27,12 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - pgdata:/var/lib/postgres/data    
+      - ${BASE_URL}/pgdata:/var/lib/postgres/data
+    restart: always
+    networks:
+     - my_network
 volumes:
   pgdata:
-    driver: local
+networks:
+   my_network:
+     driver: bridge           

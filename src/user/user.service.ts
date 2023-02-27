@@ -3,7 +3,14 @@ import { CreateUserDto, UpdatePasswordDto } from '../dto/user.dto';
 import { v4 as newUUID, validate } from 'uuid';
 import { stringAndExist } from '../common/utility';
 import { DataBase } from 'src/db/db.service';
-import { User, ClearUser, DBResponse } from '../common/types';
+import { User, ClearUser, DBResponse, Token } from '../common/types';
+import * as jwt from 'jsonwebtoken';
+import {
+  JWT_SECRET_KEY,
+  TOKEN_EXPIRE_TIME,
+  JWT_SECRET_REFRESH_KEY,
+  TOKEN_REFRESH_EXPIRE_TIME,
+} from 'src/common/const';
 
 @Injectable()
 export class UserService {
@@ -24,17 +31,17 @@ export class UserService {
     newUser.version = 1;
     newUser.createdAt = Date.now();
     newUser.updatedAt = Date.now();
-    this.db.setUser(newUser);
+    await this.db.setUser(newUser);
     response.code = 200;
-    response.data = this.db.getClearUser(newUser.id);
+    response.data = await this.db.getClearUser(newUser.id);
     return response;
   }
 
-  getAllUsers(): ClearUser[] {
+  async getAllUsers(): Promise<ClearUser[]> {
     return this.db.allUsers();
   }
 
-  getUser(id: string): DBResponse {
+  async getUser(id: string): Promise<DBResponse> {
     const response = new DBResponse();
     const valid = validate(id);
     if (!valid) {
@@ -42,8 +49,8 @@ export class UserService {
       response.message = `Id ${id} is not valid`;
       return response;
     }
-    const user = this.db.getUser(id);
-    if (!user) {
+    const user = await this.db.getUser(id);
+    if (!user || !user.id) {
       response.code = 404;
       response.message = `User with id ${id} not found`;
       return response;
@@ -61,13 +68,42 @@ export class UserService {
     return response;
   }
 
-  removeUser(id: string): DBResponse {
-    const response = this.getUser(id);
-    if (!response.data) return response;
-    this.db.removeUser(id);
+  async removeUser(id: string): Promise<DBResponse> {
+    const response = await this.getUser(id);
+    if (response.code !== 200) return response;
+    await this.db.removeUser(id);
     return response;
   }
 
+  getToken(data: string | CreateUserDto): Token {
+    const token = new Token();
+    token.accessToken = jwt.sign(data, JWT_SECRET_KEY, {
+      expiresIn: TOKEN_EXPIRE_TIME,
+    });
+    token.refreshToken = jwt.sign(data, JWT_SECRET_REFRESH_KEY, {
+      expiresIn: TOKEN_REFRESH_EXPIRE_TIME,
+    });
+    return token;
+  }
+
+  async checkUser(login: string, password: string): Promise<DBResponse> {
+    const response = new DBResponse();
+    const validData = stringAndExist(login) && stringAndExist(password);
+    if (!validData) {
+      response.code = 400;
+      response.message = 'Wrong data';
+      return response;
+    }
+    const user = await this.db.getUserByPassword(login, password);
+    if (user && user.id) {
+      response.code = 200;
+      response.data = this.getToken({ login: login, password: password });
+    } else {
+      response.code = 403;
+      response.message = 'Wrong Login or Password';
+    }
+    return response;
+  }
   async changePassword(
     id: string,
     updatePasswordDto: UpdatePasswordDto,
@@ -81,10 +117,15 @@ export class UserService {
       response.message = 'Wrong data';
       return response;
     }
-    response = this.getUser(id);
+    response = await this.getUser(id);
     if (!response.data) return response;
-    const user = this.db.getUser(id);
-    if (user.password !== updatePasswordDto.oldPassword) {
+    const user = await this.db.getUser(id);
+    if (
+      !(await this.db.comparePasswords(
+        updatePasswordDto.oldPassword,
+        user.password,
+      ))
+    ) {
       response.code = 403;
       response.message = 'Old password is wrong';
       return response;
@@ -92,8 +133,8 @@ export class UserService {
     user.password = updatePasswordDto.newPassword;
     user.version = user.version + 1;
     user.updatedAt = Date.now();
-    this.db.setUser(user);
-    response.data = this.db.getClearUser(id);
+    await this.db.setUser(user);
+    response.data = await this.db.getClearUser(id);
     return response;
   }
 }

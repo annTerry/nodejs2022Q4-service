@@ -8,7 +8,7 @@ import { Artist, DBResponse } from '../common/types';
 export class ArtistService {
   constructor(private db: DataBase) {}
 
-  create(artist: Artist): DBResponse {
+  async create(artist: Artist): Promise<DBResponse> {
     const response = new DBResponse();
     const validate =
       stringAndExist(artist.name) && booleanAndExist(artist.grammy);
@@ -20,17 +20,17 @@ export class ArtistService {
     newArtist.name = artist.name;
     newArtist.grammy = artist.grammy;
     newArtist.id = newUUID();
-    this.db.setArtist(newArtist);
+    await this.db.setArtist(newArtist);
     response.code = 200;
     response.data = newArtist;
     return response;
   }
 
-  getAllArtists(): Artist[] {
-    return this.db.allArtists();
+  async getAllArtists(): Promise<Artist[]> {
+    return await this.db.allArtists();
   }
 
-  getArtist(id: string): DBResponse {
+  async getArtist(id: string): Promise<DBResponse> {
     const response = new DBResponse();
     const valid = validate(id);
     if (!valid) {
@@ -38,8 +38,8 @@ export class ArtistService {
       response.message = `Id ${id} is not valid`;
       return response;
     }
-    const artist = this.db.getArtist(id);
-    if (!artist) {
+    const artist = await this.db.getArtist(id);
+    if (!artist || !artist.id) {
       response.code = 404;
       response.message = `Artist with id ${id} not found`;
       return response;
@@ -49,10 +49,11 @@ export class ArtistService {
     return response;
   }
 
-  removeArtist(id: string): DBResponse {
-    const response = this.getArtist(id);
-    if (!response.data) return response;
-    this.db.removeArtist(id);
+  async removeArtist(id: string): Promise<DBResponse> {
+    const response = await this.getArtist(id);
+    const dataRes = response.data as Artist;
+    if (!dataRes || !dataRes.id) return response;
+    await this.db.removeArtist(id);
     return response;
   }
 
@@ -65,13 +66,14 @@ export class ArtistService {
       response.message = `Wrong data`;
       return response;
     }
-    response = this.getArtist(id);
-    if (!response.data) {
+    response = await this.getArtist(id);
+    const dataRes = response.data as Artist;
+    if (!dataRes || !dataRes.id) {
       return response;
     }
-    artist.id = response.data.id;
-    this.db.setArtist(artist);
-    response.data = this.db.getArtist(artist.id);
+    artist.id = dataRes.id;
+    await this.db.setArtist(artist);
+    response.data = await this.db.getArtist(artist.id);
     return response;
   }
 }
