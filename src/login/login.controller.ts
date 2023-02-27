@@ -26,9 +26,10 @@ export class LoginController {
       throw new HttpException('Wrong password', dbResponse.code);
     if (dbResponse.code === 200) {
       const data = dbResponse.data as Token;
+      console.log(data.accessToken);
       res
         .status(HttpStatus.CREATED)
-        .header('Bearer', data.token)
+        .header('authorization', `Bearer ${data.accessToken}`)
         .send(dbResponse.data);
     }
   }

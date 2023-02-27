@@ -4,9 +4,13 @@ import { v4 as newUUID, validate } from 'uuid';
 import { stringAndExist } from '../common/utility';
 import { DataBase } from 'src/db/db.service';
 import { User, ClearUser, DBResponse, Token } from '../common/types';
-import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
-import { JWT_SECRET_KEY, TOKEN_EXPIRE_TIME } from 'src/common/const';
+import {
+  JWT_SECRET_KEY,
+  TOKEN_EXPIRE_TIME,
+  JWT_SECRET_REFRESH_KEY,
+  TOKEN_REFRESH_EXPIRE_TIME,
+} from 'src/common/const';
 
 @Injectable()
 export class UserService {
@@ -71,6 +75,17 @@ export class UserService {
     return response;
   }
 
+  getToken(data: string | CreateUserDto): Token {
+    const token = new Token();
+    token.accessToken = jwt.sign(data, JWT_SECRET_KEY, {
+      expiresIn: TOKEN_EXPIRE_TIME,
+    });
+    token.refreshToken = jwt.sign(data, JWT_SECRET_REFRESH_KEY, {
+      expiresIn: TOKEN_REFRESH_EXPIRE_TIME,
+    });
+    return token;
+  }
+
   async checkUser(login: string, password: string): Promise<DBResponse> {
     const response = new DBResponse();
     const validData = stringAndExist(login) && stringAndExist(password);
@@ -82,12 +97,7 @@ export class UserService {
     const user = await this.db.getUserByPassword(login, password);
     if (user && user.id) {
       response.code = 200;
-      response.data = new Token();
-      response.data.token = jwt.sign(
-        { login: login, password: password },
-        JWT_SECRET_KEY,
-        { expiresIn: TOKEN_EXPIRE_TIME },
-      );
+      response.data = this.getToken({ login: login, password: password });
     } else {
       response.code = 403;
       response.message = 'Wrong Login or Password';
@@ -110,9 +120,12 @@ export class UserService {
     response = await this.getUser(id);
     if (!response.data) return response;
     const user = await this.db.getUser(id);
-    const salt = bcrypt.genSaltSync(+this.db.saltRounds);
-    const hashPass = await bcrypt.hash(updatePasswordDto.oldPassword, salt);
-    if (user.id && user.password !== hashPass) {
+    if (
+      !(await this.db.comparePasswords(
+        updatePasswordDto.oldPassword,
+        user.password,
+      ))
+    ) {
       response.code = 403;
       response.message = 'Old password is wrong';
       return response;

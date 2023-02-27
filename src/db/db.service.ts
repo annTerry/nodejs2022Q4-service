@@ -62,10 +62,22 @@ export class DataBase {
       login: login,
     });
     if (currentUser && currentUser.password) {
-      const result = await bcrypt.compare(password, currentUser.password);
+      const result = await this.comparePasswords(
+        password,
+        currentUser.password,
+      );
       if (result) user = this.copyObjectByKeys(currentUser, user);
     }
     return user;
+  }
+
+  async comparePasswords(
+    simplePassword: string,
+    hashPassword: string,
+  ): Promise<boolean> {
+    const result = await bcrypt.compare(simplePassword, hashPassword);
+    console.log(simplePassword, hashPassword, result);
+    return result;
   }
 
   async getClearUser(id: string): Promise<ClearUser> {
@@ -78,11 +90,8 @@ export class DataBase {
   }
 
   async setUser(user: User) {
-    console.log(user.password);
-    console.log(this.saltRounds);
     const salt = bcrypt.genSaltSync(+this.saltRounds);
     user.password = await bcrypt.hash(user.password, salt);
-    console.log(user.password);
     let userModel = new DBUser();
     userModel = this.copyObjectByKeys(user, userModel);
     await AppDataSource.manager.save(userModel);

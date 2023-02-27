@@ -9,18 +9,27 @@ import {
   HttpException,
   HttpCode,
   Res,
+  Req,
   HttpStatus,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { TrackService } from './track.service';
 import { Track } from 'src/common/types';
+import { accessCheck } from 'src/common/access';
 
 @Controller('track')
 export class TrackController {
   constructor(private trackService: TrackService) {}
 
   @Get()
-  async getAllTracks(@Res() res: Response): Promise<string> {
+  async getAllTracks(
+    @Res() res: Response,
+    @Req() request: Request,
+  ): Promise<string> {
+    const auth = accessCheck(request.headers.authorization);
+    if (auth.code === 401) {
+      throw new HttpException('Not Authorized', auth.code);
+    }
     res.status(HttpStatus.OK).send(await this.trackService.getAllTracks());
     return '';
   }
@@ -28,7 +37,12 @@ export class TrackController {
   async getTrackById(
     @Param('id') id: string,
     @Res() res: Response,
+    @Req() request: Request,
   ): Promise<string> {
+    const auth = accessCheck(request.headers.authorization);
+    if (auth.code === 401) {
+      throw new HttpException('Not Authorized', auth.code);
+    }
     const dbResponse = await this.trackService.getTrack(id);
     const dataRS = dbResponse.data as Track;
     if (!dataRS || !dataRS.id) {
@@ -38,7 +52,15 @@ export class TrackController {
     return '';
   }
   @Post()
-  async create(@Body() track: Track, @Res() res: Response) {
+  async create(
+    @Body() track: Track,
+    @Res() res: Response,
+    @Req() request: Request,
+  ) {
+    const auth = accessCheck(request.headers.authorization);
+    if (auth.code === 401) {
+      throw new HttpException('Not Authorized', auth.code);
+    }
     const result = await this.trackService.create(track);
     if (result.code === 400)
       throw new HttpException('Data missing', result.code);
@@ -49,7 +71,12 @@ export class TrackController {
     @Param('id') id: string,
     @Body() track: Track,
     @Res() res: Response,
+    @Req() request: Request,
   ) {
+    const auth = accessCheck(request.headers.authorization);
+    if (auth.code === 401) {
+      throw new HttpException('Not Authorized', auth.code);
+    }
     const result = await this.trackService.changeTrack(id, track);
     if (result.code !== 200)
       throw new HttpException(result.message, result.code);
@@ -57,7 +84,11 @@ export class TrackController {
   }
   @Delete(':id')
   @HttpCode(204)
-  async delUserById(@Param('id') id: string) {
+  async delUserById(@Param('id') id: string, @Req() request: Request) {
+    const auth = accessCheck(request.headers.authorization);
+    if (auth.code === 401) {
+      throw new HttpException('Not Authorized', auth.code);
+    }
     const result = await this.trackService.removeTrack(id);
     if (result.code !== 200)
       throw new HttpException(result.message, result.code);
